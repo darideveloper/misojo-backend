@@ -7,3 +7,6 @@ Pillow==9.5.0
 django-cors-headers==4.1.0
 django-storages==1.14.2
 boto3==1.33.12
+djangorestframework==3.14.0
+Markdown==3.5.1
+django-filter==23.5
