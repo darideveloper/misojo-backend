@@ -32,6 +32,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'rest_framework_simplejwt',
     'storages',
     'audio_generator',
 ]
@@ -101,7 +102,7 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 # Language and timezone
-LANGUAGE_CODE = 'es-mx'
+LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'America/Mexico_City'
 USE_I18N = True
 USE_L10N = True
@@ -149,5 +150,8 @@ HOST = os.environ.get("HOST")
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.DjangoModelPermissionsOrAnonReadOnly'
-    ]
+    ],
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    )
 }

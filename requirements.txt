@@ -10,3 +10,4 @@ boto3==1.33.12
 djangorestframework==3.14.0
 Markdown==3.5.1
 django-filter==23.5
+djangorestframework-simplejwt==5.3.1
