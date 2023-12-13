@@ -1,0 +1,1 @@
+web: gunicorn misojo.wsgi
