@@ -133,10 +133,14 @@ STORAGES = {
     # Media file (image) management
     "default": {
         "BACKEND": "storages.backends.s3boto3.S3StaticStorage",
+        # Allow to overwrite files
+        "AWS_S3_FILE_OVERWRITE": True,
     },
     # CSS and JS file management
     "staticfiles": {
         "BACKEND": "storages.backends.s3boto3.S3StaticStorage",
+        # Allow to overwrite files
+        "AWS_S3_FILE_OVERWRITE": True,
     },
 }
 
