@@ -1,5 +1,16 @@
 from django.db import models
-from django.contrib.auth.models import User
+from django.contrib.auth.models import AbstractUser
+
+
+class User(AbstractUser):
+    """ User model based on AbstractUser """
+    id = models.AutoField(primary_key=True)
+    email = models.EmailField(unique=True)
+    first_name = models.CharField(max_length=50, blank=True)
+    last_name = models.CharField(max_length=50, blank=True)
+    is_active = models.BooleanField(default=False)
+     
+    USERNAME_FIELD = 'email'
 
 
 class File(models.Model):

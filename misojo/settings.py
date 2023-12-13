@@ -2,19 +2,18 @@ import os
 import sys
 from dotenv import load_dotenv
 
-ENV = "dev"
-
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
 
+# Get current environment from global .env
+load_dotenv(os.path.join(BASE_DIR, '.env'))
+ENV = os.environ.get("DJANGO_ENV", "prod")
+
 # load environment variables
-if ENV == "dev":
-    print("running in dev environment")
-    load_dotenv = load_dotenv(os.path.join(BASE_DIR, '.env.dev'))
-elif ENV == "prod":
-    print("running in prod environment")
-    load_dotenv = load_dotenv(os.path.join(BASE_DIR, '.env.prod'))
+env_path = os.path.join(BASE_DIR, f'.env.{ENV}')
+load_dotenv(env_path)
+print(f'Environment: {ENV}')
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.environ.get("SECRET_KEY")
@@ -33,20 +32,29 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'rest_framework_simplejwt',
-    'storages',
     'audio_generator',
 ]
 
+# Add storages in server and whitenoise in local
+if ENV == "dev":
+    INSTALLED_APPS.append('whitenoise.runserver_nostatic')
+elif ENV == "prod":
+    INSTALLED_APPS.append('storages')
+
 MIDDLEWARE = [
+    'django.middleware.common.CommonMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
+# Add whitenoise in local
+if ENV == "dev":
+    MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware')
 
 ROOT_URLCONF = 'misojo.urls'
 
@@ -88,7 +96,8 @@ DATABASES = {
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
     {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+        'NAME': 'django.contrib.auth.password_validation'
+                '.UserAttributeSimilarityValidator',
     },
     {
         'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
@@ -129,20 +138,22 @@ AWS_S3_CUSTOM_DOMAIN = f'{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com'
 AWS_S3_FILE_OVERWRITE = os.getenv('AWS_S3_FILE_OVERWRITE')
 AWS_DEFAULT_ACL = None
 
-STORAGES = {
-    # Media file (image) management
-    "default": {
-        "BACKEND": "storages.backends.s3boto3.S3StaticStorage",
-        # Allow to overwrite files
-        "AWS_S3_FILE_OVERWRITE": True,
-    },
-    # CSS and JS file management
-    "staticfiles": {
-        "BACKEND": "storages.backends.s3boto3.S3StaticStorage",
-        # Allow to overwrite files
-        "AWS_S3_FILE_OVERWRITE": True,
-    },
-}
+# Setup storages only in production
+if ENV == "prod":
+    STORAGES = {
+        # Media file (image) management
+        "default": {
+            "BACKEND": "storages.backends.s3boto3.S3StaticStorage",
+            # Allow to overwrite files
+            "AWS_S3_FILE_OVERWRITE": True,
+        },
+        # CSS and JS file management
+        "staticfiles": {
+            "BACKEND": "storages.backends.s3boto3.S3StaticStorage",
+            # Allow to overwrite files
+            "AWS_S3_FILE_OVERWRITE": True,
+        },
+    }
 
 # Redirect to https
 if not DEBUG:
