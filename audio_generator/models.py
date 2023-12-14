@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser, BaseUserManager
+from django.contrib.auth import get_user_model
 
 
 class UserManager(BaseUserManager):
@@ -61,7 +62,7 @@ class File(models.Model):
     """ Text file uploaded to convert to audio """
     
     def user_upload_to(instance, filename):
-        return f"files/{instance.user.username}/{filename}"
+        return f"files/{instance.user.email}/{filename}"
     
     id = models.AutoField(primary_key=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='files')
@@ -69,15 +70,31 @@ class File(models.Model):
     current_page = models.IntegerField(default=1)
     uploaded_at = models.DateTimeField(auto_now_add=True)
     last_modified = models.DateTimeField(auto_now=True)
+    name = models.CharField(editable=False)
+    
+    def save(self, *args, **kwargs):
+        self.name = self.path.name.split('/')[-1]
+        super().save(*args, **kwargs)
+    
+    def __str__(self):
+        return self.name
     
     
 class Track(models.Model):
     """ Audios created from text files """
     
     def user_upload_to(instance, filename):
-        return f"tracks/{instance.user.username}/{filename}"
+        return f"tracks/{instance.file.user.email}/{filename}"
 
     id = models.AutoField(primary_key=True)
     file = models.ForeignKey(File, on_delete=models.CASCADE, related_name='tracks')
     path = models.FileField(upload_to=user_upload_to)
     page = models.IntegerField()
+    name = models.CharField(max_length=50, blank=True, editable=False)
+    
+    def __save__(self, *args, **kwargs):
+        self.name = self.path.name.split('/')[-1]
+        super().save(*args, **kwargs)
+    
+    def __str__(self):
+        return self.name
