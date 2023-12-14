@@ -9,6 +9,9 @@ class User(AbstractUser):
     first_name = models.CharField(max_length=50, blank=True)
     last_name = models.CharField(max_length=50, blank=True)
     is_active = models.BooleanField(default=False)
+    username = None
+    groups = None
+    user_permissions = None
      
     USERNAME_FIELD = 'email'
 
@@ -20,7 +23,7 @@ class File(models.Model):
         return f"files/{instance.user.username}/{filename}"
     
     id = models.AutoField(primary_key=True)
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='files')
     path = models.FileField(upload_to=user_upload_to)
     current_page = models.IntegerField(default=1)
     uploaded_at = models.DateTimeField(auto_now_add=True)
@@ -34,6 +37,6 @@ class Track(models.Model):
         return f"tracks/{instance.user.username}/{filename}"
 
     id = models.AutoField(primary_key=True)
-    file = models.ForeignKey(File, on_delete=models.CASCADE)
+    file = models.ForeignKey(File, on_delete=models.CASCADE, related_name='tracks')
     path = models.FileField(upload_to=user_upload_to)
     page = models.IntegerField()

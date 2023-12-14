@@ -9,9 +9,9 @@ class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
     permission_classes = [AllowAny]
+    http_method_names = ['post']
 
 
-    
 def test_view(request):
     # Your view logic here
     return render(request, 'audio_generator/index.html')
