@@ -19,7 +19,7 @@ class FileAdmin(admin.ModelAdmin):
 @admin.register(Track)
 class TrackAdmin(admin.ModelAdmin):
     list_display = ('id', 'file', 'path', 'page')
-    list_filter = ('file', 'page')
+    list_filter = ('file__name', 'file__user')
     search_fields = ('file', 'path', 'page')
 
 
