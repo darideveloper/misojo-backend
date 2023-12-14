@@ -2,6 +2,7 @@ from .models import User
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
+
 class UserSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
@@ -15,6 +16,7 @@ class UserSerializer(serializers.HyperlinkedModelSerializer):
     def create(self, validated_data):
         user = User.objects.create_user(**validated_data)
         return user
+    
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     
