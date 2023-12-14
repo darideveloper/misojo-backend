@@ -1,28 +1,15 @@
 from django.contrib import admin
 from django.urls import path, include
-from rest_framework import routers
-from audio_generator.views import UserViewSet
-from rest_framework_simplejwt.views import (
-    TokenObtainPairView,
-    TokenRefreshView,
-)
 from django.shortcuts import redirect
 
-router = routers.DefaultRouter()
-router.register(r'users', UserViewSet)
-
 urlpatterns = [
-    
-    # Home redirect to api
-    path('', lambda request: redirect('api/', permanent=True)),
     
     # Django admin
     path('admin/', admin.site.urls),
     
     # Django REST Framework endpoints
-    path('api/', include(router.urls)),
+    path('api/', include('audio_generator.urls')),
     
-    # JWT endpoints
-    path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
-    path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    # redirect home to api
+    path('', lambda request: redirect('api/', permanent=False)),
 ]
