@@ -4,6 +4,8 @@ from audio_generator.serializers import UserSerializer
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
+from rest_framework_simplejwt.views import TokenObtainPairView
+from .serializers import CustomTokenObtainPairSerializer
 
 
 @api_view(['GET'])
@@ -11,9 +13,14 @@ def get_routes(request):
     routes = [
         '/api/token/',
         '/api/token/refresh/',
+        '/api/users/',
     ]
     
     return Response(routes)
+
+
+class CustomTokenObtainPairView(TokenObtainPairView):
+    serializer_class = CustomTokenObtainPairSerializer
 
 
 class UserViewSet(viewsets.ModelViewSet):
