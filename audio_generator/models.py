@@ -14,6 +14,8 @@ class User(AbstractUser):
     user_permissions = None
      
     USERNAME_FIELD = 'email'
+    
+    REQUIRED_FIELDS = ['first_name', 'last_name']
 
 
 class File(models.Model):
