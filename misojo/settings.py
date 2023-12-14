@@ -22,7 +22,6 @@ DEBUG = os.environ.get("DEBUG") == "True"
 ALLOWED_HOSTS = ["*"]
 
 # Application definition
-sys.path.insert(0, os.path.join(BASE_DIR, 'apps'))
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -30,9 +29,9 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'audio_generator',
     'rest_framework',
     'rest_framework_simplejwt',
-    'audio_generator',
 ]
 
 # Add storages in server and whitenoise in local
@@ -170,3 +169,5 @@ REST_FRAMEWORK = {
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     )
 }
+
+# AUTH_USER_MODEL = "audio_generator.User"

@@ -1,6 +1,6 @@
-from django.contrib.auth.models import User
+from .models import User
 from rest_framework import viewsets
-from apps.audio_generator.serializers import UserSerializer
+from audio_generator.serializers import UserSerializer
 from rest_framework.permissions import AllowAny
 
 
