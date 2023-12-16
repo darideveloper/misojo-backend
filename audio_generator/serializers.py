@@ -17,6 +17,26 @@ class UserSerializer(serializers.HyperlinkedModelSerializer):
         user = User.objects.create_user(**validated_data)
         return user
     
+    def to_representation(self, instance):
+        """ Custom confirmation response """
+        representation = super().to_representation(instance)
+        return {
+            'status': 'success',
+            'message': 'User created successfully',
+            'data': representation
+        }
+        
+    def to_internal_value(self, data):
+        """ Custom error response """
+        try:
+            return super().to_internal_value(data)
+        except serializers.ValidationError as error:
+            raise serializers.ValidationError({
+                'status': 'error',
+                'message': error.detail,
+                'data': {}
+            })
+            
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     
@@ -26,5 +46,29 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     def get_token(cls, user):
         token = super().get_token(user)
         token['email'] = user.email
-
+        
         return token
+    
+    def validate(self, attrs):
+        """ Custom confirmation response """
+        
+        # Get and validate email and password fields
+        email = attrs.get('email', '')
+        password = attrs.get('password', '')
+        
+        # Check if user exists
+        user = User.objects.filter(email=email).first()
+        if not user or not user.check_password(password):
+            return {
+                'status': 'error',
+                'message': 'user not found or invalid password',
+                'data': {}
+            }
+        
+        data = super().validate(attrs)
+    
+        return {
+            "status": "success",
+            "message": "Token generated successfully",
+            "data": data
+        }

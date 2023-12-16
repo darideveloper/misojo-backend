@@ -164,7 +164,7 @@ HOST = os.environ.get("HOST")
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
-    )
+    ),
 }
 
 AUTH_USER_MODEL = "audio_generator.User"
