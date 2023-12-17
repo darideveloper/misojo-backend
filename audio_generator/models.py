@@ -1,18 +1,41 @@
 from django.db import models
+from django.conf import settings
+from django.template.loader import render_to_string
 from django.contrib.auth.models import AbstractUser, BaseUserManager
-from django.contrib.auth import get_user_model
+from django.core.mail import EmailMultiAlternatives
 
 
 class UserManager(BaseUserManager):
     """ Custom user model manager """
     
     def create_user(self, email, password=None, **extra_fields):
+        
+        # Create regular user
         if not email:
             raise ValueError('The Email field must be set')
         email = self.normalize_email(email)
         user = self.model(email=email, **extra_fields)
         user.set_password(password)
         user.save(using=self._db)
+        
+        # Send activation email
+        activation_link = f"{settings.HOST}/activate/{user.id}"
+        text_content = f"Activation link: {activation_link}"
+        html_template_path = "audio_generator/activate.html"
+        html_content = render_to_string(html_template_path, {
+            'user': user,
+            "activation_link": activation_link,
+        })
+        
+        msg = EmailMultiAlternatives(
+            "Activate your Misojo account",
+            text_content,
+            settings.EMAIL_HOST_USER,
+            [email],
+        )
+        msg.attach_alternative(html_content, "text/html")
+        msg.send()
+        
         return user
     
     def create_superuser(self, email, password=None, **extra_fields):

@@ -1,15 +1,14 @@
 # myapp/exceptions.py
 from rest_framework.views import exception_handler
-from rest_framework.response import Response
+
 
 def json_exception_handler(exc, context):
-    
     # Call the default exception handler
     response = exception_handler(exc, context)
     
     messages = []
     
-    if "detail" in response.data:
+    if response and response.get("data", None) and "detail" in response.data:
         messages.append(response.data['detail'])
         del response.data['detail']
     else:

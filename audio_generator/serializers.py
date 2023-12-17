@@ -1,7 +1,5 @@
 from .models import User
-from rest_framework.response import Response
-from rest_framework import serializers, status
-from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework import serializers
 from rest_framework_simplejwt.serializers import (
     TokenObtainPairSerializer,
     TokenRefreshSerializer
@@ -19,16 +17,19 @@ class UserSerializer(serializers.HyperlinkedModelSerializer):
         }
 
     def create(self, validated_data):
+        """ Custom create method to hash password """
+        
+        # Create user and autosent activation email
         user = User.objects.create_user(**validated_data)
+        
         return user
 
     def to_representation(self, instance):
         """ Custom confirmation response """
-        representation = super().to_representation(instance)
         return {
             'status': 'success',
             'message': 'User created successfully',
-            'data': representation
+            'data': ""
         }
 
 
