@@ -25,17 +25,6 @@ class UserSerializer(serializers.HyperlinkedModelSerializer):
             'message': 'User created successfully',
             'data': representation
         }
-        
-    def to_internal_value(self, data):
-        """ Custom error response """
-        try:
-            return super().to_internal_value(data)
-        except serializers.ValidationError as error:
-            raise serializers.ValidationError({
-                'status': 'error',
-                'message': error.detail,
-                'data': {}
-            })
             
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
