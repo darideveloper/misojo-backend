@@ -32,6 +32,7 @@ INSTALLED_APPS = [
     'audio_generator',
     'rest_framework',
     'rest_framework_simplejwt',
+    'rest_framework_simplejwt.token_blacklist',
 ]
 
 # Add storages in server and whitenoise in local
@@ -175,7 +176,7 @@ SIMPLE_JWT = {
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
     'ROTATE_REFRESH_TOKENS': True,
     'BLACKLIST_AFTER_ROTATION': True,
-    'UPDATE_LAST_LOGIN': False,
+    'UPDATE_LAST_LOGIN': True,
 
     'ALGORITHM': 'HS256',
     'SIGNING_KEY': SECRET_KEY,

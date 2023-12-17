@@ -69,22 +69,17 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 class CustomTokenRefreshSerializer(TokenRefreshSerializer):
     def validate(self, attrs):
         """ Custom confirmation or error response """
-
-        refresh = attrs.get("refresh")
-
+        
         try:
-            # Attempt to refresh the token
-            RefreshToken(refresh)
-            
-        except Exception:
+            data = super().validate(attrs)
+        except serializers.ValidationError:
             raise serializers.ValidationError({
-                "credentials": "invalid refresh token"
-            }, code='authentication_failed')
-
-        data = super().validate(attrs)
-
-        return {
-            "status": "success",
-            "message": "Token refreshed successfully",
-            "data": data,
-        }
+                "token": "Token is invalid or expired"
+            }, code='token_not_valid')
+        else:
+            return {
+                "status": "success",
+                "message": "Token refreshed successfully",
+                "data": data
+            }
+        
