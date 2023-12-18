@@ -18,6 +18,14 @@ class UserSerializer(serializers.HyperlinkedModelSerializer):
 
     def create(self, validated_data):
         """ Custom create method to hash password """
+                
+        # Validate required fields
+        required_fields = ["first_name", "last_name", "email", "password"]
+        for field in required_fields:
+            if field not in validated_data:
+                raise serializers.ValidationError({
+                    field: [f"{field} field is required"]
+                }, code='required_field')
         
         # Create user and autosent activation email
         user = User.objects.create_user(**validated_data)
