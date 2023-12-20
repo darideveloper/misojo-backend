@@ -37,7 +37,7 @@ class UserSerializer(serializers.HyperlinkedModelSerializer):
         return {
             'status': 'success',
             'message': 'User created successfully',
-            'data': ""
+            'data': {}
         }
 
 
