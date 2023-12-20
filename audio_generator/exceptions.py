@@ -14,6 +14,7 @@ def json_exception_handler(exc, context):
     else:
         # Create response message from error data
         for field, error_text in response.data.items():
+            field = field.replace('_', ' ')
             error_text = error_text[0].replace('.', '').replace('_', ' ')
             messages.append(f"{field} error: {error_text}")
             
