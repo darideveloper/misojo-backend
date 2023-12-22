@@ -4,6 +4,7 @@ from django.urls import reverse
 from rest_framework.test import APIClient
 from rest_framework.test import APITestCase
 
+
 class TestUser (APITestCase):
     """ Test user model: create """
     
@@ -16,7 +17,7 @@ class TestUser (APITestCase):
         self.data = {
             "first_name": "sample name",
             "last_name": "sample pass",
-            "password": "12345",
+            "password": "12345678",
             "email": "sample@mail.com"
         }
     
@@ -90,3 +91,19 @@ class TestUser (APITestCase):
         # Validate user no created in database
         user = models.User.objects.filter(email=self.data['email'])
         self.assertEqual(user.count(), 1)
+        
+    def test_short_password(self):
+        """ Try to create a user with a short password
+            Expected 400: error response
+        """
+        
+        self.data['password'] = '1234567'
+        
+        # Send request and validate response
+        response = self.client.post(self.url, self.data)
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data['status'], 'error')
+        self.assertEqual(
+            response.data['message'],
+            'password error: password must be at least 8 characters'
+        )

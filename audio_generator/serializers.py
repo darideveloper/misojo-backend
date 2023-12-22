@@ -26,6 +26,12 @@ class UserSerializer(serializers.HyperlinkedModelSerializer):
                 raise serializers.ValidationError({
                     field: [f"{field} field is required"]
                 }, code='required_field')
+                
+        # Validate password length
+        if len(validated_data['password']) < 8:
+            raise serializers.ValidationError({
+                field: ["password must be at least 8 characters"]
+            }, code='password_length')
         
         # Create user and autosent activation email
         user = User.objects.create_user(**validated_data)
