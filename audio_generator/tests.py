@@ -107,3 +107,93 @@ class TestUser (APITestCase):
             response.data['message'],
             'password error: password must be at least 8 characters'
         )
+        
+        
+class TestToken(APITestCase):
+    """ Test JWT token """
+    
+    def setUp(self):
+        self.client = APIClient()
+        
+        # Default url pattern
+        self.url = reverse('token_obtain_pair')
+        
+        # Create user
+        password = '12345678'
+        self.user = models.User.objects.create_user(
+            email="sample@gmail.com",
+            first_name='sample name',
+            last_name='sample last name',
+            password=password
+        )
+        
+        # Activate user
+        self.user.is_active = True
+        self.user.save()
+        
+        self.data = {
+            "email": self.user.email,
+            "password": password
+        }
+    
+    def __test_invalid_user__(self, data: dict):
+        """ Try to get token with invalid credentials
+            Expected 400: error response
+        """
+        
+        response = self.client.post(self.url, data)
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data['status'], 'error')
+        self.assertEqual(
+            response.data['message'],
+            'credentials error: invalid user or password'
+        )
+    
+    def test_post(self):
+        """ Try to generate token with valid credentials
+            Expected 200: token generated
+        """
+        
+        # Request with valid credentials
+        response = self.client.post(self.url, self.data)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['status'], 'success')
+        self.assertIn('access', response.data["data"])
+        self.assertIn('refresh', response.data["data"])
+        
+    def test_invalid_email(self):
+        """ Try to generate token with invalid email
+            Expected 400: error response
+        """
+        
+        # Request with valid credentials
+        self.data["email"] = "invalid email"
+        self.__test_invalid_user__(self.data)
+        
+    def test_invalid_password(self):
+        """ Try to generate token with invalid password
+            Expected 400: error response
+        """
+        
+        # Request with valid credentials
+        self.data["password"] = "invalid password"
+        self.__test_invalid_user__(self.data)
+    
+    def test_inactive_user(self):
+        """ Try to generate token with inactive user
+            Expected 400: error response
+        """
+        
+        # Deactivate user
+        self.user.is_active = False
+        self.user.save()
+        
+        # Request with valid credentials
+        response = self.client.post(self.url, self.data)
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data['status'], 'error')
+        self.assertEqual(
+            response.data['message'],
+            'activation error: check your email to activate your account'
+        )
+        
