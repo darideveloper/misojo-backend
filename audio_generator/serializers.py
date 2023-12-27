@@ -71,6 +71,12 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
             raise serializers.ValidationError({
                 "credentials": "invalid user or password"
             }, code='authentication_failed')
+            
+        # Error if user is not active
+        if not user.is_active:
+            raise serializers.ValidationError({
+                "activation": "check your email to activate your account"
+            }, code='user_not_active')
 
         data = super().validate(attrs)
 
