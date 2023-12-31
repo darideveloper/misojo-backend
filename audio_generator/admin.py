@@ -7,6 +7,11 @@ from django.contrib.auth.forms import ReadOnlyPasswordHashField
 from django.core.exceptions import ValidationError
 from .models import User
 
+admin.site.site_header = "Misojo Admin"
+admin.site.site_title = 'Misojo'
+admin.site.site_url = '/'
+admin.site.index_title = "Admin"
+
 
 # Data models
 @admin.register(File)
