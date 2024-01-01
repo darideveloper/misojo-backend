@@ -4,7 +4,8 @@ from rest_framework import routers
 from audio_generator.views import UserViewSet, get_routes
 from .views import (
     CustomTokenObtainPairView,
-    CustomTokenRefreshView
+    CustomTokenRefreshView,
+    ValidateToken
 )
 
 router = routers.DefaultRouter()
@@ -19,4 +20,7 @@ urlpatterns = [
     # JWT endpoints
     path('token/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('token/refresh/', CustomTokenRefreshView.as_view(), name='token_refresh'),
+    
+    # Custom endpoints
+    path('validate-token/', ValidateToken.as_view(), name='validate_token'),
 ]

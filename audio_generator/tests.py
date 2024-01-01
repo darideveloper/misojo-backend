@@ -31,7 +31,7 @@ class TestUser (APITestCase):
         self.assertEqual(response.data['message'], 'User created successfully')
         self.assertEqual(response.data['data'], {})
      
-    def test_post(self):
+    def test_valid_data(self):
         """ Try to create user with valid data
             Expected 200: user created successfully and email send
         """
@@ -149,7 +149,7 @@ class TestToken(APITestCase):
             'credentials error: invalid user or password'
         )
     
-    def test_post(self):
+    def test_valid_credentials(self):
         """ Try to generate token with valid credentials
             Expected 200: token generated
         """
@@ -197,3 +197,87 @@ class TestToken(APITestCase):
             'activation error: check your email to activate your account'
         )
         
+        
+class TestValidateToken(APITestCase):
+    """ Test validate token """
+    
+    def setUp(self):
+        self.client = APIClient()
+        
+        # Default url pattern
+        self.url = reverse('validate_token')
+        
+        # Create user
+        email = "sample@gmail.com"
+        password = '12345678'
+        user = models.User.objects.create_user(
+            email=email,
+            first_name='sample',
+            last_name='sample',
+            password=password
+        )
+        user.is_active = True
+        user.save()
+        
+        # Send post request to get token
+        response = self.client.post(reverse('token_obtain_pair'), {
+            "email": email,
+            "password": password
+        })
+        self.token = response.data['data']['access']
+        
+    def test_missing_token(self):
+        """ Try to validate token without token
+            Expected 401: error response
+        """
+        
+        # Request without token
+        response = self.client.post(self.url)
+        self.assertEqual(response.status_code, 401)
+        self.assertEqual(response.data['status'], 'error')
+        self.assertEqual(
+            response.data['message'],
+            'Authentication credentials were not provided.'
+        )
+        
+    def test_invalid_token(self):
+        """ Try to validate token with invalid token
+            Expected 401: error response
+        """
+        
+        # Request with invalid token
+        self.client.credentials(HTTP_AUTHORIZATION='Bearer invalid_token')
+        response = self.client.post(self.url)
+        self.assertEqual(response.status_code, 401)
+        self.assertEqual(response.data['status'], 'error')
+        self.assertEqual(
+            response.data['message'],
+            'Given token not valid for any token type'
+        )
+        
+    def test_invalid_token_structure(self):
+        """ Try to validate token with invalid token
+            Expected 401: error response
+        """
+        
+        # Request with invalid token
+        self.client.credentials(HTTP_AUTHORIZATION='Bearer invalid token')
+        response = self.client.post(self.url)
+        self.assertEqual(response.status_code, 401)
+        self.assertEqual(response.data['status'], 'error')
+        self.assertEqual(
+            response.data['message'],
+            'Authorization header must contain two space-delimited values'
+        )
+        
+    def test_valid_token(self):
+        """ Try to validate token with valid token
+            Expected 200: success response
+        """
+        
+        # Request with valid token
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.token}')
+        response = self.client.post(self.url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['status'], 'success')
+        self.assertEqual(response.data['message'], 'Token is valid')

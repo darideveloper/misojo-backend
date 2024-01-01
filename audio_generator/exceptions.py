@@ -8,14 +8,26 @@ def json_exception_handler(exc, context):
     
     messages = []
     
-    if response and response.get("data", None) and "detail" in response.data:
+    if response and "detail" in response.data:
         messages.append(response.data['detail'])
         del response.data['detail']
     else:
-        # Create response message from error data
+        # Create response merging all errors
         for field, error_text in response.data.items():
             field = field.replace('_', ' ')
-            error_text = error_text[0].replace('.', '').replace('_', ' ')
+            
+            # Catch the first error message
+            if isinstance(error_text, list):
+                error_text = error_text[0]
+                
+            # Catch the first error message from nested objects
+            if isinstance(error_text, dict):
+                if "message" in error_text:
+                    error_text = error_text['message']
+                else:
+                    error_text = list(error_text.values())[0]
+                        
+            error_text = error_text.replace('.', '').replace('_', ' ')
             messages.append(f"{field} error: {error_text}")
             
     message = ', '.join(messages)

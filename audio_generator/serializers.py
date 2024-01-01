@@ -103,4 +103,3 @@ class CustomTokenRefreshSerializer(TokenRefreshSerializer):
                 "message": "Token refreshed successfully",
                 "data": data
             }
-        

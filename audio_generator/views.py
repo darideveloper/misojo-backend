@@ -9,6 +9,8 @@ from .serializers import (
     CustomTokenObtainPairSerializer,
     CustomTokenRefreshSerializer
 )
+from rest_framework.views import APIView
+from rest_framework.permissions import IsAuthenticated
 
 
 @api_view(['GET'])
@@ -17,6 +19,7 @@ def get_routes(request):
         '/api/token/',
         '/api/token/refresh/',
         '/api/users/',
+        '/api/validate-token/'
     ]
     
     return Response(routes)
@@ -35,3 +38,15 @@ class UserViewSet(viewsets.ModelViewSet):
     serializer_class = UserSerializer
     permission_classes = [AllowAny]
     http_method_names = ['post']
+    
+    
+class ValidateToken(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request):
+        
+        return Response({
+            'status': 'success',
+            'message': 'Token is valid',
+            'data': {}
+        })
