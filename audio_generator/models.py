@@ -23,7 +23,6 @@ class UserManager(BaseUserManager):
         text_content = f"Activation link: {activation_link}"
         html_template_path = "audio_generator/activate.html"
         html_content = render_to_string(html_template_path, {
-            'user': user,
             "activation_link": activation_link,
         })
         

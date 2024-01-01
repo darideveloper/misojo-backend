@@ -1,7 +1,145 @@
-<h1>Hi {{user}}</h1>
-<h2>Activate your account</h2>
-<p>Click 
-  <a href="{{activation_link}}">
-    here
-  </a>
-</p>
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans&family=Poppins:wght@400;500&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Heebo&family=Noto+Sans&family=Poppins:wght@400;500&display=swap');
+
+    body {
+      height: 100vh;
+      margin: 0;
+      background-color: #ffac6c;
+    }
+
+    .top {
+      width: 80%;
+      height: 80%;
+      padding: 100px;
+      margin: 0 auto;
+      border-radius: 0 0 20px 20px;
+      background-color: #fffbf5;
+      box-sizing: border-box;
+    }
+
+    .bottom {
+      height: 20%;
+      /* display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center; */
+    }
+
+    p,
+    h1 {
+      margin: 0;
+      color: #020202;
+      text-align: center;
+    }
+
+    h1 {
+      margin-bottom: 50px;
+      font-size: 40px;
+      font-family: 'Heebo', sans-serif;
+    }
+
+    p,
+    button {
+      font-size: 20px;
+      font-family: 'Noto Sans', sans-serif;
+      text-align: center;
+    }
+
+    button {
+      width: 200px;
+      max-width: 85%;
+      margin-top: 30px;
+      border-radius: 7px;
+      font-family: 'Noto Sans', sans-serif;
+      background-color: #ffac6c;
+      transition: all 0.35s ease-out;
+      font-size: 1.25rem;
+      color: white;
+      padding: 5px 0;
+      cursor: pointer;
+      border: 3px solid #ffac6c;
+      font-weight: bold;
+    }
+
+
+
+    button:hover {
+      background-color: #fffbf5;
+      color: #ffac6c;
+      transform: scale(1.05);
+    }
+
+    button:active {
+      opacity: 0.8;
+    }
+
+    /* .centered-content{
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+} */
+
+    .copyright-text {
+      margin-top: 30px;
+      color: black;
+    }
+
+    @media (max-width: 730px) {
+      .top {
+        padding: 100px 50px;
+      }
+    }
+
+    @media (max-width: 595px) {
+      .top {
+        width: 90%;
+        padding: 100px 20px;
+      }
+
+      .copyright-text {
+        font-size: 12px;
+      }
+    }
+
+    @media (max-width: 465px) {
+      h1 {
+        font-size: 30px;
+      }
+
+      .top {
+        width: 100%;
+      }
+    }
+
+    @media (max-width: 325px) {
+      h1 {
+        font-size: 25px;
+      }
+    }
+  </style>
+
+</head>
+
+<body>
+  <section class="top">
+    <div class="centered-content">
+      <h1>Just one more step...</h1>
+      <p>Click the button below to activate your misojo account</p>
+      <center><a href="{{activation_link}}"><button>Activate account</button></a></center>
+    </div>
+  </section>
+  <section class="bottom">
+    <p class="copyright-text">Misojo <span>&#169;</span> Copyright 2024</p>
+  </section>
+</body>
+
+</html>
