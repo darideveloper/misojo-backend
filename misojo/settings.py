@@ -24,6 +24,8 @@ ALLOWED_HOSTS = ["*"]
 # Application definition
 INSTALLED_APPS = [
     'audio_generator',
+    "admin_interface",
+    "colorfield",
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
