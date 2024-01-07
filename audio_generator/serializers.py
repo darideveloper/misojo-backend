@@ -4,9 +4,10 @@ from rest_framework_simplejwt.serializers import (
     TokenObtainPairSerializer,
     TokenRefreshSerializer
 )
-
+from rest_framework_simplejwt.tokens import Token
 
 class UserSerializer(serializers.HyperlinkedModelSerializer):
+    """ User custom crate and representation serializer """
 
     class Meta:
         model = User
@@ -17,7 +18,7 @@ class UserSerializer(serializers.HyperlinkedModelSerializer):
         }
 
     def create(self, validated_data):
-        """ Custom create method to hash password """
+        """ Validate required fields and password length after create user"""
             
         # Validate required fields
         required_fields = ["first_name", "last_name", "email", "password"]
@@ -38,20 +39,28 @@ class UserSerializer(serializers.HyperlinkedModelSerializer):
         return user
     
     def to_representation(self, instance):
-        """ Custom response when create an user """
-        data = super().to_representation(instance)
+        """ Custom response when user is created """
         return {
             "status": "success",
             "message": "REGISTER.CREATED",
-            "data": data
+            "data": {}
         }
         
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
-    """Customizes JWT default Serializer to add more information about user"""
+    """ Custom token validation and response """
 
     @classmethod
-    def get_token(cls, user):
+    def get_token(cls, user: User) -> Token:
+        """ Add email to token payload
+        
+        Args:
+            user (User): User object
+            
+        Returns:
+            Token: JWT token
+        """
+    
         token = super().get_token(user)
         token['email'] = user.email
 
@@ -59,7 +68,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         return token
 
     def validate(self, attrs):
-        """ Custom confirmation or error response """
+        """ Custom validation: credentials, activation and valid response """
 
         # Get and validate email and password fields
         email = attrs.get('email', '')
@@ -91,6 +100,8 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 
 
 class CustomTokenRefreshSerializer(TokenRefreshSerializer):
+    """ Custom token refresh validation and response """
+    
     def validate(self, attrs):
         """ Custom confirmation or error response """
         

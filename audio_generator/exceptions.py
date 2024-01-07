@@ -3,6 +3,16 @@ from rest_framework.views import exception_handler
 
 
 def json_exception_handler(exc, context):
+    """ Custom exception handler to return JSON response
+
+    Args:
+        exc (exception): Exception object
+        context (context): Context object
+
+    Returns:
+        dict: JSON response
+    """
+    
     # Call the default exception handler
     response = exception_handler(exc, context)
     

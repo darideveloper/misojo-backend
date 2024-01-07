@@ -6,9 +6,19 @@ from django.core.mail import EmailMultiAlternatives
 
 
 class UserManager(BaseUserManager):
-    """ Custom user model manager """
+    """ Custom user model manager for create new users"""
     
-    def create_user(self, email, password=None, **extra_fields):
+    def create_user(self, email: str, password: str = None, 
+                    **extra_fields) -> object:
+        """ Create new regular user and send activation email
+
+        Args:
+            email (str): user email
+            password (str, optional): user password. Defaults to None.
+
+        Returns:
+            object: User object
+        """
         
         # Create regular user
         if not email:
@@ -37,7 +47,19 @@ class UserManager(BaseUserManager):
         
         return user
     
-    def create_superuser(self, email, password=None, **extra_fields):
+    def create_superuser(self, email: str, password: str = None,
+                         **extra_fields) -> object:
+        """ Create new superuser
+        (regular user, already activated, with admin permissions)
+        
+        Args:
+            email (str): user email
+            password (str, optional): user password. Defaults to None.
+        
+        Returns:
+            object: User object
+        """
+        
         user = self.create_user(
             email,
             password=password,
@@ -50,7 +72,8 @@ class UserManager(BaseUserManager):
 
 
 class User(AbstractUser):
-    """ User model based on AbstractUser """
+    """ User model based on AbstractUser, for use email as username """
+    
     id = models.AutoField(primary_key=True)
     email = models.EmailField(
         unique=True,
@@ -73,22 +96,34 @@ class User(AbstractUser):
         return self.email
 
     def has_perm(self, perm, obj=None):
+        """ Set all permissions to admin user """
         if self.is_admin:
             return True
 
     def has_module_perms(self, app_label):
+        """ Set all permissions to admin user """
         if self.is_admin:
             return True
 
     @property
-    def is_staff(self):
+    def is_staff(self) -> bool:
+        """ Get staff status of user
+        
+        Returns:
+            bool: True if user is admin
+        """
         return self.is_admin
     
 
 class File(models.Model):
     """ Text file uploaded to convert to audio """
     
-    def user_upload_to(instance, filename):
+    def user_upload_to(instance, filename) -> str:
+        """ Get path to save file
+        
+        Returns:
+            str: path to save file
+        """
         return f"files/{instance.user.email}/{filename}"
     
     id = models.AutoField(primary_key=True)
@@ -100,6 +135,7 @@ class File(models.Model):
     name = models.CharField(editable=False)
     
     def save(self, *args, **kwargs):
+        """ Set file base name as name """
         self.name = self.path.name.split('/')[-1]
         super().save(*args, **kwargs)
     
@@ -110,7 +146,12 @@ class File(models.Model):
 class Track(models.Model):
     """ Audios created from text files """
     
-    def user_upload_to(instance, filename):
+    def user_upload_to(instance, filename) -> str:
+        """ Get path to save file
+        
+        Returns:
+            str: path to save file
+        """
         return f"tracks/{instance.file.user.email}/{filename}"
 
     id = models.AutoField(primary_key=True)
@@ -120,6 +161,7 @@ class Track(models.Model):
     name = models.CharField(max_length=50, blank=True, editable=False)
     
     def __save__(self, *args, **kwargs):
+        """ Set file base name as name """
         self.name = self.path.name.split('/')[-1]
         super().save(*args, **kwargs)
     
