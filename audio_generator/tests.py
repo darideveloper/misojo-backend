@@ -28,8 +28,7 @@ class TestUser (APITestCase):
         response = self.client.post(self.url, self.data)
         self.assertEqual(response.status_code, 201)
         self.assertEqual(response.data['status'], 'success')
-        self.assertEqual(response.data['message'], 'User created successfully')
-        self.assertEqual(response.data['data'], {})
+        self.assertEqual(response.data['message'], 'REGISTER.CREATED')
      
     def test_valid_data(self):
         """ Try to create user with valid data
@@ -63,7 +62,7 @@ class TestUser (APITestCase):
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.data['status'], 'error')
         self.assertIn('is required', response.data['message'])
-        self.assertIn('first name', response.data['message'])
+        self.assertIn('first_name', response.data['message'])
         self.assertIn('first_name', response.data['data'])
         
         # Validate user no created in database
@@ -82,10 +81,7 @@ class TestUser (APITestCase):
         response = self.client.post(self.url, self.data)
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.data['status'], 'error')
-        self.assertEqual(
-            response.data['message'],
-            'email error: user with this email already exists'
-        )
+        self.assertEqual(response.data['message'], 'REGISTER.DUPLICATED')
         self.assertIn('email', response.data['data'])
         
         # Validate user no created in database
@@ -103,10 +99,7 @@ class TestUser (APITestCase):
         response = self.client.post(self.url, self.data)
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.data['status'], 'error')
-        self.assertEqual(
-            response.data['message'],
-            'password error: password must be at least 8 characters'
-        )
+        self.assertEqual(response.data['message'], 'REGISTER.INVALID_PASSWORD')
         
         
 class TestToken(APITestCase):
@@ -144,10 +137,7 @@ class TestToken(APITestCase):
         response = self.client.post(self.url, data)
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.data['status'], 'error')
-        self.assertEqual(
-            response.data['message'],
-            'credentials error: invalid user or password'
-        )
+        self.assertEqual(response.data['message'], 'TOKEN.INVALID_CRED')
     
     def test_valid_credentials(self):
         """ Try to generate token with valid credentials
@@ -192,10 +182,7 @@ class TestToken(APITestCase):
         response = self.client.post(self.url, self.data)
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.data['status'], 'error')
-        self.assertEqual(
-            response.data['message'],
-            'activation error: check your email to activate your account'
-        )
+        self.assertEqual(response.data['message'], 'TOKEN.INACTIVE')
 
 
 class TestTokenRefresh(APITestCase):

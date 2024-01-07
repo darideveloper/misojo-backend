@@ -4,7 +4,6 @@ from rest_framework_simplejwt.serializers import (
     TokenObtainPairSerializer,
     TokenRefreshSerializer
 )
-from django.utils.translation import gettext as _
 
 
 class UserSerializer(serializers.HyperlinkedModelSerializer):
@@ -19,46 +18,32 @@ class UserSerializer(serializers.HyperlinkedModelSerializer):
 
     def create(self, validated_data):
         """ Custom create method to hash password """
-                
-        # Get languaje from request
-        lang = self.context['request'].headers.get('Accept-Language', 'en')
-        
-        # Generate internationalized errors
-        if lang == 'es':
-            error_required_field = "es requerido/a"
-            error_password = "la contraseña debe tener al menos 8 caracteres"
-        else:
-            error_required_field = "is required"
-            error_password = "password must be at least 8 characters"
             
         # Validate required fields
         required_fields = ["first_name", "last_name", "email", "password"]
         for field in required_fields:
             if field not in validated_data:
                 raise serializers.ValidationError({
-                    field: [f"{field} {error_required_field}"]
+                    field: [f"{field} is required"]
                 }, code='required_field')
                 
         # Validate password length
         if len(validated_data['password']) < 8:
             raise serializers.ValidationError({
-                field: [error_password]
-            }, code='password_length')
+                "password": "REGISTER.INVALID_PASSWORD"
+            }, code='invalid_password')
         
         # Create user and autosent activation email
-        User.objects.create_user(**validated_data)
-        
-        # Generate internationalized message
-        if lang == 'es':
-            message = "Usuario creado correctamente"
-        else:
-            message = "User created successfully"
-        
-        # Json response
+        user = User.objects.create_user(**validated_data)
+        return user
+    
+    def to_representation(self, instance):
+        """ Custom response when create an user """
+        data = super().to_representation(instance)
         return {
-            'status': 'success',
-            'message': message,
-            'data': {}
+            "status": "success",
+            "message": "REGISTER.CREATED",
+            "data": data
         }
         
 
@@ -79,48 +64,28 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         # Get and validate email and password fields
         email = attrs.get('email', '')
         password = attrs.get('password', '')
-
-        # Get languaje from request
-        lang = self.context['request'].headers.get('Accept-Language', 'en')
         
         # Check if user exists
         user = User.objects.filter(email=email).first()
         if not user or not user.check_password(password):
             
-            # Generate internationalized message
-            if lang == 'es':
-                message = "Usuario o contraseña incorrectos"
-            else:
-                message = "Invalid user or password"
-            
             raise serializers.ValidationError({
-                "credentials": message
+                "credentials": "TOKEN.INVALID_CRED"
             }, code='authentication_failed')
             
         # Error if user is not active
         if not user.is_active:
             
-            # Generate internationalized message
-            if lang == 'es':
-                message = "Usuario no activo. Revisa tu correo para activar tu cuenta"
-            else:
-                message = "User not active. Check your email to activate your account"
-            
             raise serializers.ValidationError({
-                "activation": message
+                "activation": "TOKEN.INACTIVE"
             }, code='user_not_active')
 
         data = super().validate(attrs)
-        
-        if lang == 'es':
-            message = "Welcome to Misojo"
-        else:
-            message = "Bienvenido a Misojo"
-        
+
         # Json response
         return {
             "status": "success",
-            "message": message,
+            "message": "TOKEN.GENERATED",
             "data": data
         }
 
@@ -139,6 +104,6 @@ class CustomTokenRefreshSerializer(TokenRefreshSerializer):
             # Json response
             return {
                 "status": "success",
-                "message": _("Token refreshed successfully"),
+                "message": "Token refreshed successfully",
                 "data": data
             }

@@ -6,10 +6,10 @@ def json_exception_handler(exc, context):
     # Call the default exception handler
     response = exception_handler(exc, context)
     
-    messages = []
+    message = ""
     
     if response and "detail" in response.data:
-        messages.append(response.data['detail'])
+        message = response.data['detail']
         del response.data['detail']
     else:
         # Create response only with first error
@@ -27,10 +27,8 @@ def json_exception_handler(exc, context):
                 error_text = list(error_text.values())[0]
             
         # Detect languaje from request
-        messages.append(error_text.replace("_", " ").capitalize())
-            
-    message = ' '.join(messages)
-    
+        message = error_text
+                
     # Customize the response based on the exception type
     response.data = {
         'status': 'error',

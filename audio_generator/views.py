@@ -12,7 +12,6 @@ from .serializers import (
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 
-
 @api_view(['GET'])
 def get_routes(request):
     routes = [

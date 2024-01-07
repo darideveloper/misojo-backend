@@ -52,7 +52,12 @@ class UserManager(BaseUserManager):
 class User(AbstractUser):
     """ User model based on AbstractUser """
     id = models.AutoField(primary_key=True)
-    email = models.EmailField(unique=True)
+    email = models.EmailField(
+        unique=True,
+        error_messages={
+            "unique": "REGISTER.DUPLICATED",
+        }
+    )
     first_name = models.CharField(max_length=50, blank=True)
     last_name = models.CharField(max_length=50, blank=True)
     is_active = models.BooleanField(default=False)
