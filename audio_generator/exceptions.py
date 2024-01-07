@@ -12,25 +12,24 @@ def json_exception_handler(exc, context):
         messages.append(response.data['detail'])
         del response.data['detail']
     else:
-        # Create response merging all errors
-        for field, error_text in response.data.items():
-            field = field.replace('_', ' ')
+        # Create response only with first error
+        error_text = list(response.data.values())[0]
+        
+        # Catch the first error message
+        if isinstance(error_text, list):
+            error_text = error_text[0]
             
-            # Catch the first error message
-            if isinstance(error_text, list):
-                error_text = error_text[0]
-                
-            # Catch the first error message from nested objects
-            if isinstance(error_text, dict):
-                if "message" in error_text:
-                    error_text = error_text['message']
-                else:
-                    error_text = list(error_text.values())[0]
-                        
-            error_text = error_text.replace('.', '').replace('_', ' ')
-            messages.append(f"{field} error: {error_text}")
+        # Catch the first error message from nested objects
+        if isinstance(error_text, dict):
+            if "message" in error_text:
+                error_text = error_text['message']
+            else:
+                error_text = list(error_text.values())[0]
             
-    message = ', '.join(messages)
+        # Detect languaje from request
+        messages.append(error_text.replace("_", " ").capitalize())
+            
+    message = ' '.join(messages)
     
     # Customize the response based on the exception type
     response.data = {

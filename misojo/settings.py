@@ -44,6 +44,7 @@ elif ENV == "prod":
     INSTALLED_APPS.append('storages')
 
 MIDDLEWARE = [
+    'django.middleware.locale.LocaleMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.middleware.common.CommonMiddleware',
     'corsheaders.middleware.CorsMiddleware',

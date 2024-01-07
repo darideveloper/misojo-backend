@@ -196,7 +196,11 @@ class TestToken(APITestCase):
             response.data['message'],
             'activation error: check your email to activate your account'
         )
-        
+
+
+class TestTokenRefresh(APITestCase):
+    pass
+
         
 class TestValidateToken(APITestCase):
     """ Test validate token """
@@ -255,8 +259,8 @@ class TestValidateToken(APITestCase):
             'Given token not valid for any token type'
         )
         
-    def test_invalid_token_structure(self):
-        """ Try to validate token with invalid token
+    def test_invalid_token_format(self):
+        """ Try to validate token with invalid token json format
             Expected 401: error response
         """
         
