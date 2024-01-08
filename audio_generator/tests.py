@@ -4,11 +4,12 @@ from django.urls import reverse
 from rest_framework.test import APIClient
 from rest_framework.test import APITestCase
 
-
 class TestUser (APITestCase):
     """ Test user model: create """
     
     def setUp(self):
+        """ Save default data """
+        
         self.client = APIClient()
         
         # Default url pattern
@@ -103,9 +104,11 @@ class TestUser (APITestCase):
         
         
 class TestToken(APITestCase):
-    """ Test JWT token """
+    """ Test get JWT token """
     
     def setUp(self):
+        """ Register and activate user """
+        
         self.client = APIClient()
         
         # Default url pattern
@@ -186,13 +189,91 @@ class TestToken(APITestCase):
 
 
 class TestTokenRefresh(APITestCase):
-    pass
-
+    """ Test refresh JWT token """
+    
+    def setUp(self) -> None:
+        """ Register and activate user """
+        self.client = APIClient()
+        
+        # Default url pattern
+        self.url = reverse('token_refresh')
+        
+        # Create user
+        self.email = "sample@gmail.com"
+        self.password = '12345678'
+        user = models.User.objects.create_user(
+            email=self.email,
+            first_name='sample',
+            last_name='sample',
+            password=self.password
+        )
+        user.is_active = True
+        user.save()
+        
+    def test_refreshed(self):
+        """ Try to refresh token with valid refresh token
+            Expected 200: success response
+        """
+        
+        # Send post request to get initial token
+        response = self.client.post(reverse('token_obtain_pair'), {
+            "email": self.email,
+            "password": self.password
+        })
+        access = response.data['data']['access']
+        refresh = response.data['data']['refresh']
+                
+        # Validate response content
+        response = self.client.post(self.url, {"refresh": refresh})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['status'], 'success')
+        self.assertIn('access', response.data["data"])
+        self.assertIn('refresh', response.data["data"])
+        
+        # Validate new tokens
+        self.assertNotEqual(access, response.data["data"]["access"])
+        self.assertNotEqual(refresh, response.data["data"]["refresh"])
+        
+        # Validate refresh token blacklisted, try to refresh again
+        response = self.client.post(self.url, {"refresh": refresh})
+        self.assertEqual(response.status_code, 401)
+        self.assertEqual(response.data['status'], 'error')
+        self.assertEqual(response.data['message'], "Token is blacklisted")
+        self.assertNotIn('access', response.data["data"])
+        self.assertNotIn('refresh', response.data["data"])
+        
+    def test_invalid_token(self):
+        """ Try to refresh token with invalid refresh token
+            Expected 401: error response
+        """
+        
+        response = self.client.post(self.url, {"refresh": "fake token 123"})
+        self.assertEqual(response.status_code, 401)
+        self.assertEqual(response.data['status'], 'error')
+        self.assertEqual(response.data['message'], "Token is invalid or expired")
+        self.assertNotIn('access', response.data["data"])
+        self.assertNotIn('refresh', response.data["data"])
+        
+    def test_missing_data(self):
+        """ Try to refresh token without refresh token
+            Expected 401: error response
+        """
+        
+        # Request without token
+        response = self.client.post(self.url)
+        
+        # Validate response content
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data['status'], 'error')
+        self.assertEqual(response.data['message'], "This field is required.")
+        self.assertNotIn('access', response.data["data"])
+                       
         
 class TestValidateToken(APITestCase):
     """ Test validate token """
     
     def setUp(self):
+        """ Register user and get token """
         self.client = APIClient()
         
         # Default url pattern
