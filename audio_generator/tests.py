@@ -4,6 +4,7 @@ from django.urls import reverse
 from rest_framework.test import APIClient
 from rest_framework.test import APITestCase
 
+
 class TestUser (APITestCase):
     """ Test user model: create """
     
@@ -31,7 +32,7 @@ class TestUser (APITestCase):
         self.assertEqual(response.data['status'], 'success')
         self.assertEqual(response.data['message'], 'REGISTER.CREATED')
      
-    def test_valid_data(self):
+    def test_created(self):
         """ Try to create user with valid data
             Expected 200: user created successfully and email send
         """
@@ -51,7 +52,7 @@ class TestUser (APITestCase):
         # Validate email sent
         self.assertEqual(len(mail.outbox), 1)
         
-    def test_missing_fields(self):
+    def test_missing_data(self):
         """ Try to create user with missing fields
             Expected 400: error response
         """
@@ -70,7 +71,7 @@ class TestUser (APITestCase):
         user = models.User.objects.filter(email=self.data['email'])
         self.assertEqual(user.count(), 0)
 
-    def test_already_used_email(self):
+    def test_duplicated(self):
         """ Try to create a user with an email already used
             Expected 400: error response
         """
@@ -89,7 +90,7 @@ class TestUser (APITestCase):
         user = models.User.objects.filter(email=self.data['email'])
         self.assertEqual(user.count(), 1)
         
-    def test_short_password(self):
+    def test_invalid_password(self):
         """ Try to create a user with a short password
             Expected 400: error response
         """
@@ -142,7 +143,7 @@ class TestToken(APITestCase):
         self.assertEqual(response.data['status'], 'error')
         self.assertEqual(response.data['message'], 'TOKEN.INVALID_CRED')
     
-    def test_valid_credentials(self):
+    def test_generated(self):
         """ Try to generate token with valid credentials
             Expected 200: token generated
         """
@@ -154,7 +155,7 @@ class TestToken(APITestCase):
         self.assertIn('access', response.data["data"])
         self.assertIn('refresh', response.data["data"])
         
-    def test_invalid_email(self):
+    def test_invalid_cred_email(self):
         """ Try to generate token with invalid email
             Expected 400: error response
         """
@@ -163,7 +164,7 @@ class TestToken(APITestCase):
         self.data["email"] = "invalid email"
         self.__test_invalid_user__(self.data)
         
-    def test_invalid_password(self):
+    def test_invalid_cred_password(self):
         """ Try to generate token with invalid password
             Expected 400: error response
         """
@@ -172,7 +173,7 @@ class TestToken(APITestCase):
         self.data["password"] = "invalid password"
         self.__test_invalid_user__(self.data)
     
-    def test_inactive_user(self):
+    def test_inactive(self):
         """ Try to generate token with inactive user
             Expected 400: error response
         """
@@ -298,7 +299,7 @@ class TestValidateToken(APITestCase):
         })
         self.token = response.data['data']['access']
         
-    def test_missing_token(self):
+    def test_missing_data(self):
         """ Try to validate token without token
             Expected 401: error response
         """
@@ -327,7 +328,7 @@ class TestValidateToken(APITestCase):
             'Given token not valid for any token type'
         )
         
-    def test_invalid_token_format(self):
+    def test_invalid_format(self):
         """ Try to validate token with invalid token json format
             Expected 401: error response
         """
@@ -342,7 +343,7 @@ class TestValidateToken(APITestCase):
             'Authorization header must contain two space-delimited values'
         )
         
-    def test_valid_token(self):
+    def test_valid(self):
         """ Try to validate token with valid token
             Expected 200: success response
         """
