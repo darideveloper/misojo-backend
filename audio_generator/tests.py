@@ -266,7 +266,8 @@ class TestTokenRefresh(APITestCase):
         # Validate response content
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.data['status'], 'error')
-        self.assertEqual(response.data['message'], "This field is required.")
+        self.assertIn('refresh', response.data['message'])
+        self.assertIn('is required', response.data['message'])
         self.assertNotIn('access', response.data["data"])
                        
         

@@ -36,8 +36,14 @@ def json_exception_handler(exc, context):
             else:
                 error_text = list(error_text.values())[0]
             
-        # Detect languaje from request
+        # Save message
         message = error_text
+        
+        # Validate if field name is required
+        if message == "This field is required.":
+            field = list(response.data.keys())[0]
+            message_clean = message.replace(".", "").replace("This ", "")
+            message = f"{field} {message_clean}"
                 
     # Customize the response based on the exception type
     response.data = {
