@@ -116,9 +116,9 @@ AUTH_PASSWORD_VALIDATORS = [
 # Language and timezone
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'America/Mexico_City'
-USE_I18N = True
 USE_L10N = True
 USE_TZ = True
+USE_I18N = False
 
 
 # Static and media files (CSS, JavaScript, Images)

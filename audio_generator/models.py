@@ -1,8 +1,14 @@
+import os
+import requests
 from django.db import models
 from django.conf import settings
+from django.core.files import File as django_file
 from django.template.loader import render_to_string
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.core.mail import EmailMultiAlternatives
+from libs.audio import generate_audio
+from libs.pdf import get_pdf_text
+from misojo.settings import MEDIA_ROOT
 
 
 class UserManager(BaseUserManager):
@@ -133,11 +139,83 @@ class File(models.Model):
     uploaded_at = models.DateTimeField(auto_now_add=True)
     last_modified = models.DateTimeField(auto_now=True)
     name = models.CharField(editable=False)
-    
+            
+    def generate_tracks(self):
+        """ Generate audios/tracks for the next 5 pages """
+        
+        # Get current related tracks
+        tracks = self.tracks.filter(file=self)
+        tracks_pages = list(map(lambda track: track.page, tracks))
+        
+        # Generate new required audios
+        for page in range(self.current_page, self.current_page + 5):
+            
+            # Skip if audio its already generated
+            if page in tracks_pages:
+                continue
+            
+            # Genare and end if page not exists
+            print(f"generating audio for file {self} in page {page}")
+            generated = self.generate_track(page)
+            if not generated:
+                break
+            
+    def generate_track(self, page: int) -> bool:
+        """ Create specific track for a single page
+        
+        Args:
+            page (int): page number to generate audio
+            
+        Returns:
+            bool: True if audio was generated, False otherwise
+        """
+        
+        # Download aws files
+        url = self.path.url
+        if url.startswith('https://misojo.s3.amazonaws.com/'):
+            response = requests.get(url)
+            file_folder = os.path.join(
+                MEDIA_ROOT,
+                "files",
+                self.user.email,
+            )
+            os.makedirs(file_folder, exist_ok=True)
+            pdf_path = os.path.join(file_folder, self.name)
+            with open(pdf_path, 'wb') as file:
+                file.write(response.content)
+        else:
+            pdf_path = self.path.path
+        
+        # Get text from pdf and validate if its generated
+        text, generated = get_pdf_text(pdf_path, page)
+        if not generated:
+            return False
+        
+        # Create and save track
+        file_name = f"{self.name}_{page}.mp3"
+        file_path = os.path.join(
+            MEDIA_ROOT,
+            "files",
+            self.user.email,
+            file_name
+        )
+        track_path = generate_audio(text, 'es', file_path)
+        track_obj = Track.objects.create(
+            file=self,
+            page=page
+        )
+        with open(track_path, 'rb') as track_file:
+            file = django_file(track_file)
+            track_obj.path.save(file_name, file, save=True)
+        track_obj.save()
+        
+        return True
+            
     def save(self, *args, **kwargs):
         """ Set file base name as name """
         self.name = self.path.name.split('/')[-1]
         super().save(*args, **kwargs)
+        self.generate_tracks()
     
     def __str__(self):
         return self.name
