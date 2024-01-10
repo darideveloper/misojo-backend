@@ -6,6 +6,7 @@ from rest_framework_simplejwt.serializers import (
 )
 from rest_framework_simplejwt.tokens import Token
 
+
 class UserSerializer(serializers.HyperlinkedModelSerializer):
     """ User custom crate and representation serializer """
 
@@ -31,7 +32,7 @@ class UserSerializer(serializers.HyperlinkedModelSerializer):
         # Validate password length
         if len(validated_data['password']) < 8:
             raise serializers.ValidationError({
-                "password": "REGISTER.INVALID_PASSWORD"
+                "password": "API.REGISTER.INVALID_PASSWORD"
             }, code='invalid_password')
         
         # Create user and autosent activation email
@@ -42,7 +43,7 @@ class UserSerializer(serializers.HyperlinkedModelSerializer):
         """ Custom response when user is created """
         return {
             "status": "success",
-            "message": "REGISTER.CREATED",
+            "message": "API.REGISTER.CREATED",
             "data": {}
         }
         
@@ -79,14 +80,14 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         if not user or not user.check_password(password):
             
             raise serializers.ValidationError({
-                "credentials": "TOKEN.INVALID_CRED"
+                "credentials": "API.TOKEN.INVALID_CRED"
             }, code='authentication_failed')
             
         # Error if user is not active
         if not user.is_active:
             
             raise serializers.ValidationError({
-                "activation": "TOKEN.INACTIVE"
+                "activation": "API.TOKEN.INACTIVE"
             }, code='user_not_active')
 
         data = super().validate(attrs)
@@ -94,7 +95,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         # Json response
         return {
             "status": "success",
-            "message": "TOKEN.GENERATED",
+            "message": "API.TOKEN.GENERATED",
             "data": data
         }
 

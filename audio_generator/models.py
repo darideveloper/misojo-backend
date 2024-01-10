@@ -8,7 +8,7 @@ from django.core.mail import EmailMultiAlternatives
 class UserManager(BaseUserManager):
     """ Custom user model manager for create new users"""
     
-    def create_user(self, email: str, password: str = None, 
+    def create_user(self, email: str, password: str = None,
                     **extra_fields) -> object:
         """ Create new regular user and send activation email
 
@@ -78,7 +78,7 @@ class User(AbstractUser):
     email = models.EmailField(
         unique=True,
         error_messages={
-            "unique": "REGISTER.DUPLICATED",
+            "unique": "API.REGISTER.DUPLICATED",
         }
     )
     first_name = models.CharField(max_length=50, blank=True)

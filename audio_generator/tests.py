@@ -30,7 +30,7 @@ class TestUser (APITestCase):
         response = self.client.post(self.url, self.data)
         self.assertEqual(response.status_code, 201)
         self.assertEqual(response.data['status'], 'success')
-        self.assertEqual(response.data['message'], 'REGISTER.CREATED')
+        self.assertEqual(response.data['message'], 'API.REGISTER.CREATED')
      
     def test_created(self):
         """ Try to create user with valid data
@@ -83,7 +83,7 @@ class TestUser (APITestCase):
         response = self.client.post(self.url, self.data)
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.data['status'], 'error')
-        self.assertEqual(response.data['message'], 'REGISTER.DUPLICATED')
+        self.assertEqual(response.data['message'], 'API.REGISTER.DUPLICATED')
         self.assertIn('email', response.data['data'])
         
         # Validate user no created in database
@@ -101,7 +101,7 @@ class TestUser (APITestCase):
         response = self.client.post(self.url, self.data)
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.data['status'], 'error')
-        self.assertEqual(response.data['message'], 'REGISTER.INVALID_PASSWORD')
+        self.assertEqual(response.data['message'], 'API.REGISTER.INVALID_PASSWORD')
         
         
 class TestToken(APITestCase):
@@ -141,7 +141,7 @@ class TestToken(APITestCase):
         response = self.client.post(self.url, data)
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.data['status'], 'error')
-        self.assertEqual(response.data['message'], 'TOKEN.INVALID_CRED')
+        self.assertEqual(response.data['message'], 'API.TOKEN.INVALID_CRED')
     
     def test_generated(self):
         """ Try to generate token with valid credentials
@@ -186,7 +186,7 @@ class TestToken(APITestCase):
         response = self.client.post(self.url, self.data)
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.data['status'], 'error')
-        self.assertEqual(response.data['message'], 'TOKEN.INACTIVE')
+        self.assertEqual(response.data['message'], 'API.TOKEN.INACTIVE')
 
 
 class TestTokenRefresh(APITestCase):
