@@ -1,5 +1,6 @@
 import os
 import requests
+from threading import Thread
 from django.db import models
 from django.conf import settings
 from django.core.files import File as django_file
@@ -124,6 +125,13 @@ class User(AbstractUser):
 class File(models.Model):
     """ Text file uploaded to convert to audio """
     
+    STATUS_CHOICES = (
+        (0, 'Uploading'),
+        (1, 'Splitting'),
+        (2, 'Generating'),
+        (3, 'Completed'),
+    )
+    
     def user_upload_to(instance, filename) -> str:
         """ Get path to save file
         
@@ -139,9 +147,14 @@ class File(models.Model):
     uploaded_at = models.DateTimeField(auto_now_add=True)
     last_modified = models.DateTimeField(auto_now=True)
     name = models.CharField(editable=False)
+    status = models.IntegerField(choices=STATUS_CHOICES, default=0)
     
     def split_pdf(self):
         """ Split pdf file and create pages instances """
+        
+        # Update status
+        self.status = '1'
+        self.save()
         
         # Split pdf file
         username = self.user.email
@@ -242,7 +255,10 @@ class File(models.Model):
         """ Set file base name as name """
         self.name = self.path.name.split('/')[-1]
         super().save(*args, **kwargs)
-        self.split_pdf()
+        
+        # Split pdf in background
+        thread_split = Thread(target=self.split_pdf)
+        thread_split.start()
     
     def __str__(self):
         return self.name
