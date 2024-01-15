@@ -7,8 +7,8 @@ from django.template.loader import render_to_string
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.core.mail import EmailMultiAlternatives
 from libs.audio import generate_audio
-from libs.pdf import get_pdf_text
-from misojo.settings import MEDIA_ROOT
+from libs.pdf import get_pdf_text, split_pdf
+from misojo.settings import MEDIA_ROOT, TEMP_FOLDER
 
 
 class UserManager(BaseUserManager):
@@ -139,7 +139,34 @@ class File(models.Model):
     uploaded_at = models.DateTimeField(auto_now_add=True)
     last_modified = models.DateTimeField(auto_now=True)
     name = models.CharField(editable=False)
+    
+    def split_pdf(self):
+        """ Split pdf file and create pages instances """
+        
+        # Split pdf file
+        username = self.user.email
+        output_path = os.path.join(TEMP_FOLDER, username, self.name)
+        os.makedirs(output_path, exist_ok=True)
+        split_pdf(self.path.path, output_path)
+        
+        # Save pages instances
+        pdf_pages = os.listdir(output_path)
+        for page_pdf in pdf_pages:
+            page_path = os.path.join(output_path, page_pdf)
+            page_num = int(page_pdf.split('.')[0])
             
+            # Base instance
+            page_obj = Page.objects.create(
+                file=self,
+                page_num=page_num,
+            )
+            
+            # Add file
+            with open(page_path, 'rb') as track_file:
+                file = django_file(track_file)
+                page_obj.path_pdf.save(page_pdf, file, save=True)
+            page_obj.save()
+      
     def generate_tracks(self):
         """ Generate audios/tracks for the next 5 pages """
         
@@ -186,62 +213,57 @@ class File(models.Model):
         else:
             pdf_path = self.path.path
         
-        # Get text from pdf and validate if its generated
-        text, generated = get_pdf_text(pdf_path, page)
-        if not generated:
-            return False
+        # # Get text from pdf and validate if its generated
+        # text, generated = get_pdf_text(pdf_path, page)
+        # if not generated:
+        #     return False
         
-        # Create and save track
-        file_name = f"{self.name}_{page}.mp3"
-        file_path = os.path.join(
-            MEDIA_ROOT,
-            "files",
-            self.user.email,
-            file_name
-        )
-        track_path = generate_audio(text, 'es', file_path)
-        track_obj = Track.objects.create(
-            file=self,
-            page=page
-        )
-        with open(track_path, 'rb') as track_file:
-            file = django_file(track_file)
-            track_obj.path.save(file_name, file, save=True)
-        track_obj.save()
+        # # Create and save track
+        # file_name = f"{self.name}_{page}.mp3"
+        # file_path = os.path.join(
+        #     MEDIA_ROOT,
+        #     "files",
+        #     self.user.email,
+        #     file_name
+        # )
+        # track_path = generate_audio(text, 'es', file_path)
+        # track_obj = Track.objects.create(
+        #     file=self,
+        #     page=page
+        # )
+        # with open(track_path, 'rb') as track_file:
+        #     file = django_file(track_file)
+        #     track_obj.path.save(file_name, file, save=True)
+        # track_obj.save()
         
-        return True
+        # return True
             
     def save(self, *args, **kwargs):
         """ Set file base name as name """
         self.name = self.path.name.split('/')[-1]
         super().save(*args, **kwargs)
-        self.generate_tracks()
+        self.split_pdf()
     
     def __str__(self):
         return self.name
     
     
-class Track(models.Model):
-    """ Audios created from text files """
+class Page(models.Model):
+    """ Pages (audios and single page pdf files)  created from pdf files """
     
-    def user_upload_to(instance, filename) -> str:
+    def user_upload_to(instance, page_file) -> str:
         """ Get path to save file
         
         Returns:
             str: path to save file
         """
-        return f"tracks/{instance.file.user.email}/{filename}"
+        return f"pages/{instance.file.user.email}/{instance.file.name}/{page_file}"
 
     id = models.AutoField(primary_key=True)
     file = models.ForeignKey(File, on_delete=models.CASCADE, related_name='tracks')
-    path = models.FileField(upload_to=user_upload_to)
-    page = models.IntegerField()
-    name = models.CharField(max_length=50, blank=True, editable=False)
-    
-    def __save__(self, *args, **kwargs):
-        """ Set file base name as name """
-        self.name = self.path.name.split('/')[-1]
-        super().save(*args, **kwargs)
+    path_audio = models.FileField(upload_to=user_upload_to)
+    path_pdf = models.FileField(upload_to=user_upload_to)
+    page_num = models.IntegerField()
     
     def __str__(self):
-        return self.name
+        return f"{self.file}/{self.page_num}"

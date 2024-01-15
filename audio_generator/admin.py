@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import File, Track
+from .models import File, Page
 from django import forms
 from django.contrib.auth.models import Group
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
@@ -21,11 +21,12 @@ class FileAdmin(admin.ModelAdmin):
     search_fields = ('user', 'path', 'uploaded_at', 'last_modified')
 
 
-@admin.register(Track)
-class TrackAdmin(admin.ModelAdmin):
-    list_display = ('id', 'file', 'path', 'page')
+@admin.register(Page)
+class PageAdmin(admin.ModelAdmin):
+    list_display = ('file', 'page_num')
+    search_fields = ('file', 'page_num')
     list_filter = ('file__name', 'file__user')
-    search_fields = ('file', 'path', 'page')
+    ordering = ('file', 'page_num')
 
 
 # Custom user model setup

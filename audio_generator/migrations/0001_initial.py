@@ -54,7 +54,7 @@ class Migration(migrations.Migration):
             name='Track',
             fields=[
                 ('id', models.AutoField(primary_key=True, serialize=False)),
-                ('path', models.FileField(upload_to=audio_generator.models.Track.user_upload_to)),
+                ('path', models.FileField(upload_to="")),
                 ('page', models.IntegerField()),
                 ('name', models.CharField(blank=True, editable=False, max_length=50)),
                 ('file', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='tracks', to='audio_generator.file')),
