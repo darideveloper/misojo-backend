@@ -1,5 +1,6 @@
 import os
 import requests
+from time import sleep
 from threading import Thread
 from django.db import models
 from django.conf import settings
@@ -8,7 +9,7 @@ from django.template.loader import render_to_string
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.core.mail import EmailMultiAlternatives
 from libs.audio import generate_audio
-from libs.pdf import get_pdf_text, split_pdf
+from libs.pdf import get_pdf_text, split_pdf as split_pdf_lib
 from misojo.settings import MEDIA_ROOT, TEMP_FOLDER
 
 
@@ -152,15 +153,11 @@ class File(models.Model):
     def split_pdf(self):
         """ Split pdf file and create pages instances """
         
-        # Update status
-        self.status = '1'
-        self.save()
-        
         # Split pdf file
         username = self.user.email
         output_path = os.path.join(TEMP_FOLDER, username, self.name)
         os.makedirs(output_path, exist_ok=True)
-        split_pdf(self.path.path, output_path)
+        split_pdf_lib(self.path.path, output_path)
         
         # Save pages instances
         pdf_pages = os.listdir(output_path)
@@ -179,28 +176,10 @@ class File(models.Model):
                 file = django_file(track_file)
                 page_obj.path_pdf.save(page_pdf, file, save=True)
             page_obj.save()
+            
+        self.generate_audios()
       
-    def generate_tracks(self):
-        """ Generate audios/tracks for the next 5 pages """
-        
-        # Get current related tracks
-        tracks = self.tracks.filter(file=self)
-        tracks_pages = list(map(lambda track: track.page, tracks))
-        
-        # Generate new required audios
-        for page in range(self.current_page, self.current_page + 5):
-            
-            # Skip if audio its already generated
-            if page in tracks_pages:
-                continue
-            
-            # Genare and end if page not exists
-            print(f"generating audio for file {self} in page {page}")
-            generated = self.generate_track(page)
-            if not generated:
-                break
-            
-    def generate_track(self, page: int) -> bool:
+    def generate_audio(self, page: object) -> bool:
         """ Create specific track for a single page
         
         Args:
@@ -209,9 +188,11 @@ class File(models.Model):
         Returns:
             bool: True if audio was generated, False otherwise
         """
+    
+        print(f"downloading pdf for file {self} in page {page.page_num}")
         
         # Download aws files
-        url = self.path.url
+        url = page.path_pdf.url
         if url.startswith('https://misojo.s3.amazonaws.com/'):
             response = requests.get(url)
             file_folder = os.path.join(
@@ -224,42 +205,76 @@ class File(models.Model):
             with open(pdf_path, 'wb') as file:
                 file.write(response.content)
         else:
-            pdf_path = self.path.path
+            pdf_path = page.path_pdf.path
         
-        # # Get text from pdf and validate if its generated
-        # text, generated = get_pdf_text(pdf_path, page)
-        # if not generated:
-        #     return False
+        print(f"getting text from pdf for file {self} in page {page.page_num}")
         
-        # # Create and save track
-        # file_name = f"{self.name}_{page}.mp3"
-        # file_path = os.path.join(
-        #     MEDIA_ROOT,
-        #     "files",
-        #     self.user.email,
-        #     file_name
-        # )
-        # track_path = generate_audio(text, 'es', file_path)
-        # track_obj = Track.objects.create(
-        #     file=self,
-        #     page=page
-        # )
-        # with open(track_path, 'rb') as track_file:
-        #     file = django_file(track_file)
-        #     track_obj.path.save(file_name, file, save=True)
-        # track_obj.save()
+        # Get text from pdf and validate if its generated
+        text = get_pdf_text(pdf_path)
         
-        # return True
+        # Create and save track
+        print(f"creating audio for file {self} in page {page.page_num}")
+        file_name = f"{page.page_num}.mp3"
+        file_path = os.path.join(
+            TEMP_FOLDER,
+            "pages",
+            self.user.email,
+            self.name,
+            file_name
+        )
+        audio_path = generate_audio(text, 'es', file_path)
+        with open(audio_path, 'rb') as track_file:
+            file = django_file(track_file)
+            page.path_audio.save(file_name, file, save=True)
+            
+        print(f"audio created for file {self} in page {page.page_num}")
+        page.save()
             
     def save(self, *args, **kwargs):
         """ Set file base name as name """
-        self.name = self.path.name.split('/')[-1]
-        super().save(*args, **kwargs)
         
-        # Split pdf in background
-        thread_split = Thread(target=self.split_pdf)
-        thread_split.start()
-    
+        # Remove special chars from pdf file path
+        clean_chars = [
+            "-",
+            " ",
+            "/",
+            "\\",
+            "?",
+            "!",
+            "'",
+            '"',
+            "(",
+            ")",
+        ]
+                
+        if not self.name:
+            self.name = self.path.name.split('/')[-1]
+            self.name = self.name.replace(".pdf", "").strip().lower()
+            for char in clean_chars:
+                self.name = self.name.replace(char, "_")
+            
+        # Split pdf file first time and generate first audios
+        if self.status == 0:
+            super().save(*args, **kwargs)
+            self.status = 1
+            self.split_pdf()
+            
+        # Generate audios each update (like each time page change)
+        for page in range(self.current_page, self.current_page + 5):
+            
+            # Validate if is required to generated an audio
+            page = Page.objects.filter(file=self, page_num=page, path_audio='')
+            if not page:
+                continue
+            page = page[0]
+            
+            # Genare and end if page not exists
+            print(f"audio required for file {self} in page {page.page_num}")
+            generate_audio_thread = Thread(target=self.generate_audio, args=(page,))
+            generate_audio_thread.start()
+            
+        super().save(*args, **kwargs)
+
     def __str__(self):
         return self.name
     

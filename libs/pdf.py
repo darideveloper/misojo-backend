@@ -2,35 +2,26 @@ import os
 import PyPDF2
 
 
-def get_pdf_text(pdf_path: os.path, page_num: int) -> tuple:
+def get_pdf_text(pdf_path: os.path) -> tuple:
     """ Get text from specific page from PDF file
     
     Args:
         pdf_path (os.path): Path to PDF file
-        page (int): Page number to extract text from
     
     Returns:
         tuple:
             str: Text from PDF file
-            bool: True if page exists, False otherwise
     """
-    
-    page_num -= 1
     
     # Read PDF file
     with open(pdf_path, 'rb') as file:
         pdf_reader = PyPDF2.PdfFileReader(file)
-        num_pages = pdf_reader.numPages
-        
-        # Validate page number
-        if page_num >= num_pages:
-            return "", False
 
         # Extract text from specific page
-        page = pdf_reader.getPage(page_num)
+        page = pdf_reader.getPage(0)
         text = page.extractText()
     
-        return text, True
+        return text
 
 
 def split_pdf(input_path: os.path, output_folder: os.path):

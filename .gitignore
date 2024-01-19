@@ -1,3 +1,4 @@
 media
 staticfiles
 *.pdf
+temp/*

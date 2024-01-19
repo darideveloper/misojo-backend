@@ -30,6 +30,10 @@ def generate_audio(text: str, lang: str, file_path: str, slow: bool = False) -> 
     for char in clean_chars:
         text = text.replace(char, " ")
     
+    # Create file dirs
+    file_dir = os.path.dirname(file_path)
+    os.makedirs(file_dir, exist_ok=True)
+    
     # Generate audio
     gtts_audio = gTTS(text=text, lang=lang, slow=slow)
     gtts_audio.save(file_path)
