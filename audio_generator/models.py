@@ -8,7 +8,7 @@ from django.core.files import File as django_file
 from django.template.loader import render_to_string
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.core.mail import EmailMultiAlternatives
-from libs.audio import generate_audio
+from libs.audio import generate_audio as gtts_generate_audio
 from libs.pdf import get_pdf_text, split_pdf as split_pdf_lib
 from misojo.settings import MEDIA_ROOT, TEMP_FOLDER
 
@@ -149,6 +149,7 @@ class File(models.Model):
     last_modified = models.DateTimeField(auto_now=True)
     name = models.CharField(editable=False)
     status = models.IntegerField(choices=STATUS_CHOICES, default=0)
+    working_processes = models.IntegerField(default=0)
     
     def split_pdf(self):
         """ Split pdf file and create pages instances """
@@ -176,9 +177,7 @@ class File(models.Model):
                 file = django_file(track_file)
                 page_obj.path_pdf.save(page_pdf, file, save=True)
             page_obj.save()
-            
-        self.generate_audios()
-      
+                  
     def generate_audio(self, page: object) -> bool:
         """ Create specific track for a single page
         
@@ -222,13 +221,21 @@ class File(models.Model):
             self.name,
             file_name
         )
-        audio_path = generate_audio(text, 'es', file_path)
+        audio_path = gtts_generate_audio(text, 'es', file_path)
         with open(audio_path, 'rb') as track_file:
             file = django_file(track_file)
             page.path_audio.save(file_name, file, save=True)
             
         print(f"audio created for file {self} in page {page.page_num}")
         page.save()
+        
+        # Reduce working processes
+        self.working_processes -= 1
+        
+        # If there are no more working processes, set status to completed
+        if self.working_processes == 0:
+            self.status = 3
+            self.save()
             
     def save(self, *args, **kwargs):
         """ Set file base name as name """
@@ -267,6 +274,13 @@ class File(models.Model):
             if not page:
                 continue
             page = page[0]
+            
+            # Increase working processes
+            self.working_processes += 1
+            
+            # Change status to generating
+            if self.status != 2:
+                self.status = 2
             
             # Genare and end if page not exists
             print(f"audio required for file {self} in page {page.page_num}")
