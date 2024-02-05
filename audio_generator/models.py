@@ -158,7 +158,7 @@ class File(models.Model):
         username = self.user.email
         output_path = os.path.join(TEMP_FOLDER, username, self.name)
         os.makedirs(output_path, exist_ok=True)
-        split_pdf_lib(self.path.path, output_path)
+        split_pdf_lib(self.path.url, output_path)
         
         # Save pages instances
         pdf_pages = os.listdir(output_path)

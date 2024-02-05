@@ -1,6 +1,7 @@
 import os
 import PyPDF2
-
+import requests
+from django.conf import settings
 
 def get_pdf_text(pdf_path: os.path) -> tuple:
     """ Get text from specific page from PDF file
@@ -31,6 +32,14 @@ def split_pdf(input_path: os.path, output_folder: os.path):
         input_path (os.path): Path to PDF file
         output_folder (os.path): Path to output folder
     """
+    
+    # Download file from aws s3
+    if "misojo.s3" in input_path:
+        res = requests.get(input_path)
+        file_base = input_path.split("/")[-1]
+        input_path = os.path.join(settings.MEDIA_ROOT, file_base)
+        with open(input_path, 'wb') as file:
+            file.write(res.content)
     
     with open(input_path, 'rb') as file:
         pdf_reader = PyPDF2.PdfFileReader(file)
