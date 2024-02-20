@@ -12,6 +12,7 @@ from .serializers import (
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 
+
 @api_view(['GET'])
 def get_routes(request):
     routes = [
@@ -33,11 +34,37 @@ class CustomTokenRefreshView(TokenObtainPairView):
 
 
 class UserViewSet(viewsets.ModelViewSet):
+    
     queryset = User.objects.all()
     serializer_class = UserSerializer
     permission_classes = [AllowAny]
-    http_method_names = ['post']
+    http_method_names = ['post', 'get']
     
+    def get_permissions(self):
+        if self.request.method == 'POST':
+            self.permission_classes = [AllowAny]
+        elif self.request.method == 'GET':
+            self.permission_classes = [IsAuthenticated]
+        return super().get_permissions()
+    
+    # No return all registers (return only the user logged in)
+    def list(self, request):
+        
+        user = request.user
+        
+        return Response({
+            'status': 'success',
+            'message': 'API.USER.RETRIEVED',
+            'data': [
+                {
+                    'id': user.id,
+                    'email': user.email,
+                    'first_name': user.first_name,
+                    'last_name': user.last_name,
+                }
+            ]
+        })
+        
     
 class ValidateToken(APIView):
     permission_classes = [IsAuthenticated]

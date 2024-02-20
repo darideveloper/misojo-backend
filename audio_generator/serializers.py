@@ -41,12 +41,13 @@ class UserSerializer(serializers.HyperlinkedModelSerializer):
     
     def to_representation(self, instance):
         """ Custom response when user is created """
+        
         return {
             "status": "success",
             "message": "API.REGISTER.CREATED",
             "data": {}
         }
-        
+
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     """ Custom token validation and response """
@@ -90,7 +91,11 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
                 "activation": "API.TOKEN.INACTIVE"
             }, code='user_not_active')
 
+        # Get tokens
         data = super().validate(attrs)
+        
+        # Add user id to data
+        data['user_id'] = user.id
 
         # Json response
         return {

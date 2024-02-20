@@ -32,7 +32,7 @@ class TestUser (APITestCase):
         self.assertEqual(response.data['status'], 'success')
         self.assertEqual(response.data['message'], 'API.REGISTER.CREATED')
      
-    def test_created(self):
+    def test_register_create(self):
         """ Try to create user with valid data
             Expected 200: user created successfully and email send
         """
@@ -52,7 +52,7 @@ class TestUser (APITestCase):
         # Validate email sent
         self.assertEqual(len(mail.outbox), 1)
         
-    def test_missing_data(self):
+    def test_register_missing_data(self):
         """ Try to create user with missing fields
             Expected 400: error response
         """
@@ -71,7 +71,7 @@ class TestUser (APITestCase):
         user = models.User.objects.filter(email=self.data['email'])
         self.assertEqual(user.count(), 0)
 
-    def test_duplicated(self):
+    def test_register_duplicated(self):
         """ Try to create a user with an email already used
             Expected 400: error response
         """
@@ -90,7 +90,7 @@ class TestUser (APITestCase):
         user = models.User.objects.filter(email=self.data['email'])
         self.assertEqual(user.count(), 1)
         
-    def test_invalid_password(self):
+    def test_register_invalid_password(self):
         """ Try to create a user with a short password
             Expected 400: error response
         """
@@ -103,7 +103,59 @@ class TestUser (APITestCase):
         self.assertEqual(response.data['status'], 'error')
         self.assertEqual(response.data['message'], 'API.REGISTER.INVALID_PASSWORD')
         
+    def test_retrive_retrieved(self):
+        """ Try to retrieve user with valid token
+            Expected 200: user retrieved successfully
+        """
         
+        # Create user
+        models.User.objects.create_user(
+            email=self.data['email'],
+            first_name=self.data['first_name'],
+            last_name=self.data['last_name'],
+            password=self.data['password']
+        )
+        
+        # Authenticate user
+        user = models.User.objects.get(email=self.data['email'])
+        self.client.force_authenticate(user=user)
+        
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['status'], 'success')
+        self.assertEqual(response.data['message'], 'API.USER.RETRIEVED')
+        self.assertEqual(response.data['data'][0]['email'], self.data['email'])
+        self.assertEqual(response.data['data'][0]['first_name'], self.data['first_name'])
+        self.assertEqual(response.data['data'][0]['last_name'], self.data['last_name'])
+        
+    def test_retrive_missing_token(self):
+        """ Try to retrieve user without token
+            Expected 401: error response
+        """
+        
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 401)
+        self.assertEqual(response.data['status'], 'error')
+        self.assertEqual(
+            response.data['message'],
+            'Authentication credentials were not provided.'
+        )
+    
+    def test_retrive_invalid_token(self):
+        """ Try to retrieve user with invalid token
+            Expected 401: error response
+        """
+        
+        self.client.credentials(HTTP_AUTHORIZATION='Bearer invalid_token')
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 401)
+        self.assertEqual(response.data['status'], 'error')
+        self.assertEqual(
+            response.data['message'],
+            'Given token not valid for any token type'
+        )
+        
+    
 class TestToken(APITestCase):
     """ Test get JWT token """
     
