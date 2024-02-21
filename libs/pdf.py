@@ -3,6 +3,7 @@ import PyPDF2
 import requests
 from django.conf import settings
 
+
 def get_pdf_text(pdf_path: os.path) -> tuple:
     """ Get text from specific page from PDF file
     
@@ -25,12 +26,15 @@ def get_pdf_text(pdf_path: os.path) -> tuple:
         return text
 
 
-def split_pdf(input_path: os.path, output_folder: os.path):
+def split_pdf(input_path: os.path, output_folder: os.path) -> int:
     """ Split pdf file into multiple files
     
     Args:
         input_path (os.path): Path to PDF file
         output_folder (os.path): Path to output folder
+        
+    Returns:
+        int: Total number of pages in the PDF file
     """
     
     # Download file from aws s3
@@ -41,6 +45,11 @@ def split_pdf(input_path: os.path, output_folder: os.path):
         with open(input_path, 'wb') as file:
             file.write(res.content)
     
+    # Local file path
+    else:
+        input_path_parts = input_path.split("/")[2:]
+        input_path = os.path.join(settings.MEDIA_ROOT, *input_path_parts)
+
     with open(input_path, 'rb') as file:
         pdf_reader = PyPDF2.PdfFileReader(file)
         total_pages = pdf_reader.numPages
@@ -52,6 +61,8 @@ def split_pdf(input_path: os.path, output_folder: os.path):
             output_path = f"{output_folder}/{page_number + 1}.pdf"
             with open(output_path, 'wb') as output_file:
                 pdf_writer.write(output_file)
+                
+    return total_pages
 
 
 if __name__ == "__main__":

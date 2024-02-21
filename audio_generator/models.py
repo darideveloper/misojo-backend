@@ -138,7 +138,8 @@ class File(models.Model):
         Returns:
             str: path to save file
         """
-        return f"files/{instance.user.email}/{filename}"
+        email_clean = instance.user.email.replace("@", "_").replace(".", "_")
+        return f"files/{email_clean}/{filename}"
     
     id = models.AutoField(primary_key=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='files')
@@ -149,6 +150,7 @@ class File(models.Model):
     name = models.CharField(editable=False)
     status = models.IntegerField(choices=STATUS_CHOICES, default=0)
     working_processes = models.IntegerField(default=0)
+    pages_num = models.IntegerField(default=0)
     
     def split_pdf(self):
         """ Split pdf file and create pages instances """
@@ -157,7 +159,7 @@ class File(models.Model):
         username = self.user.email
         output_path = os.path.join(TEMP_FOLDER, username, self.name)
         os.makedirs(output_path, exist_ok=True)
-        split_pdf_lib(self.path.url, output_path)
+        self.pages_num = split_pdf_lib(self.path.url, output_path)
         
         # Save pages instances
         pdf_pages = os.listdir(output_path)
