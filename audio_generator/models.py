@@ -1,6 +1,5 @@
 import os
 import requests
-from time import sleep
 from threading import Thread
 from django.db import models
 from django.conf import settings
@@ -128,6 +127,11 @@ class User(AbstractUser):
 class File(models.Model):
     """ Text file uploaded to convert to audio """
     
+    LANGS = [
+        ('es', 'Spanish'),
+        ('en', 'English'),
+    ]
+    
     def user_upload_to(instance, filename) -> str:
         """ Get path to save file
         
@@ -145,6 +149,7 @@ class File(models.Model):
     last_modified = models.DateTimeField(auto_now=True)
     name = models.CharField(editable=False)
     pages_num = models.IntegerField(default=0)
+    lang = models.CharField(max_length=2, choices=LANGS, default='en')
     
     def split_pdf(self):
         """ Split pdf file and create pages instances """
@@ -161,6 +166,8 @@ class File(models.Model):
             page_path = os.path.join(output_path, page_pdf)
             page_num = int(page_pdf.split('.')[0])
             
+            print(f"creating page {page_num} for file {self}")
+            
             # Base instance
             page_obj = Page.objects.create(
                 file=self,
@@ -172,6 +179,8 @@ class File(models.Model):
                 file = django_file(track_file)
                 page_obj.path_pdf.save(page_pdf, file, save=True)
             page_obj.save()
+            
+        print(f"pages created for file {self}")
     
     def save(self, *args, **kwargs):
         """ Set file base name as name """
@@ -206,7 +215,8 @@ class File(models.Model):
 @receiver(post_save, sender=File)
 def file_updated(sender, instance, created, **kwargs):
     if created:
-        instance.split_pdf()
+        # Split pdf in background
+        Thread(target=instance.split_pdf).start()
         
 
 class Page(models.Model):
@@ -263,7 +273,7 @@ class Page(models.Model):
             self.file.name,
             audio_name
         )
-        audio_path = gtts_generate_audio(text, 'es', file_path)
+        audio_path = gtts_generate_audio(text, self.file.lang, file_path)
         with open(audio_path, 'rb') as track_file:
             file = django_file(track_file)
             self.path_audio.save(audio_name, file, save=True)
