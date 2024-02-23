@@ -1,7 +1,22 @@
 import os
+from time import sleep
 from gtts import gTTS
+import threading
 
 
+# Create a lock
+lock = threading.Lock()
+
+
+# Decorator to synchronize function execution
+def synchronized(func):
+    def synced_func(*args, **kwargs):
+        with lock:
+            return func(*args, **kwargs)
+    return synced_func
+
+
+@synchronized
 def generate_audio(text: str, lang: str, file_path: str, slow: bool = False) -> os.path:
     """ Generate audio file from text
     
@@ -37,6 +52,7 @@ def generate_audio(text: str, lang: str, file_path: str, slow: bool = False) -> 
     # Generate audio
     gtts_audio = gTTS(text=text, lang=lang, slow=slow)
     gtts_audio.save(file_path)
+    sleep(5)
     
     return file_path
 

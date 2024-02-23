@@ -1,5 +1,6 @@
 import os
 import requests
+from time import sleep
 from threading import Thread
 from django.db import models
 from django.conf import settings
@@ -10,6 +11,8 @@ from django.core.mail import EmailMultiAlternatives
 from libs.audio import generate_audio as gtts_generate_audio
 from libs.pdf import get_pdf_text, split_pdf as split_pdf_lib
 from misojo.settings import MEDIA_ROOT, TEMP_FOLDER
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 
 
 class UserManager(BaseUserManager):
@@ -125,13 +128,6 @@ class User(AbstractUser):
 class File(models.Model):
     """ Text file uploaded to convert to audio """
     
-    STATUS_CHOICES = (
-        (0, 'Uploading'),
-        (1, 'Splitting'),
-        (2, 'Generating'),
-        (3, 'Completed'),
-    )
-    
     def user_upload_to(instance, filename) -> str:
         """ Get path to save file
         
@@ -143,13 +139,11 @@ class File(models.Model):
     
     id = models.AutoField(primary_key=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='files')
-    path = models.FileField(upload_to=user_upload_to)
+    path = models.FileField(upload_to=user_upload_to, max_length=500)
     current_page = models.IntegerField(default=1)
     uploaded_at = models.DateTimeField(auto_now_add=True)
     last_modified = models.DateTimeField(auto_now=True)
     name = models.CharField(editable=False)
-    status = models.IntegerField(choices=STATUS_CHOICES, default=0)
-    working_processes = models.IntegerField(default=0)
     pages_num = models.IntegerField(default=0)
     
     def split_pdf(self):
@@ -178,66 +172,7 @@ class File(models.Model):
                 file = django_file(track_file)
                 page_obj.path_pdf.save(page_pdf, file, save=True)
             page_obj.save()
-                  
-    def generate_audio(self, page: object) -> bool:
-        """ Create specific track for a single page
-        
-        Args:
-            page (int): page number to generate audio
-            
-        Returns:
-            bool: True if audio was generated, False otherwise
-        """
     
-        print(f"downloading pdf for file {self} in page {page.page_num}")
-        
-        # Download aws files
-        url = page.path_pdf.url
-        if url.startswith('https://misojo.s3.amazonaws.com/'):
-            response = requests.get(url)
-            file_folder = os.path.join(
-                MEDIA_ROOT,
-                "files",
-                self.user.email,
-            )
-            os.makedirs(file_folder, exist_ok=True)
-            pdf_path = os.path.join(file_folder, self.name)
-            with open(pdf_path, 'wb') as file:
-                file.write(response.content)
-        else:
-            pdf_path = page.path_pdf.path
-        
-        print(f"getting text from pdf for file {self} in page {page.page_num}")
-        
-        # Get text from pdf and validate if its generated
-        text = get_pdf_text(pdf_path)
-        
-        # Create and save track
-        print(f"creating audio for file {self} in page {page.page_num}")
-        file_name = f"{page.page_num}.mp3"
-        file_path = os.path.join(
-            TEMP_FOLDER,
-            "pages",
-            self.user.email,
-            self.name,
-            file_name
-        )
-        audio_path = gtts_generate_audio(text, 'es', file_path)
-        with open(audio_path, 'rb') as track_file:
-            file = django_file(track_file)
-            page.path_audio.save(file_name, file, save=True)
-            
-        print(f"audio created for file {self} in page {page.page_num}")
-        page.save()
-        
-        # Reduce working processes
-        self.working_processes -= 1
-        
-        # If there are no more working processes, set status to completed
-        if self.working_processes == 0:
-            self.status = 3
-            self.save()
-            
     def save(self, *args, **kwargs):
         """ Set file base name as name """
         
@@ -260,40 +195,20 @@ class File(models.Model):
             self.name = self.name.replace(".pdf", "").strip().lower()
             for char in clean_chars:
                 self.name = self.name.replace(char, "_")
-            
-        # Split pdf file first time and generate first audios
-        if self.status == 0:
-            super().save(*args, **kwargs)
-            self.status = 1
-            self.split_pdf()
-            
-        # Generate audios each update (like each time page change)
-        for page in range(self.current_page, self.current_page + 5):
-            
-            # Validate if is required to generated an audio
-            page = Page.objects.filter(file=self, page_num=page, path_audio='')
-            if not page:
-                continue
-            page = page[0]
-            
-            # Increase working processes
-            self.working_processes += 1
-            
-            # Change status to generating
-            if self.status != 2:
-                self.status = 2
-            
-            # Genare and end if page not exists
-            print(f"audio required for file {self} in page {page.page_num}")
-            generate_audio_thread = Thread(target=self.generate_audio, args=(page,))
-            generate_audio_thread.start()
-            
+                                
         super().save(*args, **kwargs)
-
+                 
     def __str__(self):
         return self.name
     
-    
+
+# Split pdf file after save
+@receiver(post_save, sender=File)
+def file_updated(sender, instance, created, **kwargs):
+    if created:
+        instance.split_pdf()
+        
+
 class Page(models.Model):
     """ Pages (audios and single page pdf files)  created from pdf files """
     
@@ -307,9 +222,54 @@ class Page(models.Model):
 
     id = models.AutoField(primary_key=True)
     file = models.ForeignKey(File, on_delete=models.CASCADE, related_name='tracks')
-    path_audio = models.FileField(upload_to=user_upload_to)
-    path_pdf = models.FileField(upload_to=user_upload_to)
+    path_audio = models.FileField(upload_to=user_upload_to, max_length=500)
+    path_pdf = models.FileField(upload_to=user_upload_to, max_length=500)
     page_num = models.IntegerField()
+    
+    def generate_audio(self):
+        """ Create specific track for a single page
+        """
+    
+        print(f"downloading pdf for file {self} in page {self.page_num}")
+        
+        # Download aws files
+        url = self.path_pdf.url
+        if url.startswith('https://misojo.s3.amazonaws.com/'):
+            response = requests.get(url)
+            file_folder = os.path.join(
+                MEDIA_ROOT,
+                "files",
+                self.file.user.email,
+            )
+            os.makedirs(file_folder, exist_ok=True)
+            pdf_path = os.path.join(file_folder, self.name)
+            with open(pdf_path, 'wb') as file:
+                file.write(response.content)
+        else:
+            pdf_path = self.path_pdf.path
+        
+        print(f"getting text from pdf for file {self.file} in page {self.page_num}")
+        
+        # Get text from pdf and validate if its generated
+        text = get_pdf_text(pdf_path)
+        
+        # Create and save track
+        print(f"creating audio for file {self.file} in page {self.page_num}")
+        audio_name = f"{self.page_num}.mp3"
+        file_path = os.path.join(
+            TEMP_FOLDER,
+            "pages",
+            self.file.user.email,
+            self.file.name,
+            audio_name
+        )
+        audio_path = gtts_generate_audio(text, 'es', file_path)
+        with open(audio_path, 'rb') as track_file:
+            file = django_file(track_file)
+            self.path_audio.save(audio_name, file, save=True)
+            
+        print(f"audio created for file {self.file} in page {self.page_num}")
+        self.save()
     
     def __str__(self):
         return f"{self.file}/{self.page_num}"
