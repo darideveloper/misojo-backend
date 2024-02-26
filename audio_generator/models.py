@@ -1,5 +1,6 @@
 import os
 import requests
+from time import sleep
 from threading import Thread
 from django.db import models
 from django.conf import settings
@@ -9,6 +10,7 @@ from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.core.mail import EmailMultiAlternatives
 from libs.audio import generate_audio as gtts_generate_audio
 from libs.pdf import get_pdf_text, split_pdf as split_pdf_lib
+from libs.clean import get_clean_file_name
 from misojo.settings import MEDIA_ROOT, TEMP_FOLDER
 from django.db.models.signals import post_save
 from django.dispatch import receiver
@@ -147,9 +149,10 @@ class File(models.Model):
     current_page = models.IntegerField(default=1)
     uploaded_at = models.DateTimeField(auto_now_add=True)
     last_modified = models.DateTimeField(auto_now=True)
-    name = models.CharField(editable=False)
+    name = models.CharField(editable=True)
     pages_num = models.IntegerField(default=0)
     lang = models.CharField(max_length=2, choices=LANGS, default='en')
+    pages_generated = models.BooleanField(default=False)
     
     def split_pdf(self):
         """ Split pdf file and create pages instances """
@@ -166,7 +169,7 @@ class File(models.Model):
             page_path = os.path.join(output_path, page_pdf)
             page_num = int(page_pdf.split('.')[0])
             
-            print(f"creating page {page_num} for file {self}")
+            print(f"creating page {page_num} for file {self.name}")
             
             # Base instance
             page_obj = Page.objects.create(
@@ -180,30 +183,22 @@ class File(models.Model):
                 page_obj.path_pdf.save(page_pdf, file, save=True)
             page_obj.save()
             
-        print(f"pages created for file {self}")
+            sleep(2)
+            
+        # Update pages generated status
+        self.pages_generated = True
+        self.save()
+            
+        print(f"pages created for file {self.name}")
     
     def save(self, *args, **kwargs):
         """ Set file base name as name """
         
         # Remove special chars from pdf file path
-        clean_chars = [
-            "-",
-            " ",
-            "/",
-            "\\",
-            "?",
-            "!",
-            "'",
-            '"',
-            "(",
-            ")",
-        ]
-                
         if not self.name:
-            self.name = self.path.name.split('/')[-1]
-            self.name = self.name.replace(".pdf", "").strip().lower()
-            for char in clean_chars:
-                self.name = self.name.replace(char, "_")
+            base_name = self.path.name.split('/')[-1]
+            self.name = get_clean_file_name(base_name)
+            print(f"file name: {self.name}")
                                 
         super().save(*args, **kwargs)
                  

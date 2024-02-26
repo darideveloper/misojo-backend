@@ -45,8 +45,8 @@ def split_pdf(input_path: os.path, output_folder: os.path) -> int:
         with open(input_path, 'wb') as file:
             file.write(res.content)
     
-    # Local file path
-    else:
+    # Local file path uploaded from dashboard
+    elif "crons" not in input_path:
         input_path_parts = input_path.split("/")[2:]
         input_path = os.path.join(settings.MEDIA_ROOT, *input_path_parts)
 
