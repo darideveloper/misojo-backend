@@ -25,7 +25,7 @@ class FileAdmin(admin.ModelAdmin):
 @admin.register(Page)
 class PageAdmin(admin.ModelAdmin):
     list_display = ('file', 'page_num')
-    search_fields = ('file', 'page_num')
+    search_fields = ('file__name', 'page_num')
     list_filter = ('file__name', 'file__user')
     ordering = ('file', 'page_num')
 
