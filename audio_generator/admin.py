@@ -16,9 +16,10 @@ admin.site.index_title = "Admin"
 # Data models
 @admin.register(File)
 class FileAdmin(admin.ModelAdmin):
-    list_display = ('id', 'user', 'lang', 'path', 'current_page', 'uploaded_at', 'last_modified')
+    list_display = ('id', 'user', 'lang', 'name', 'current_page', 
+                    'uploaded_at', 'last_modified')
     list_filter = ('user', 'lang', 'uploaded_at', 'last_modified')
-    search_fields = ('user', 'path', 'uploaded_at', 'last_modified')
+    search_fields = ('user', 'name', 'uploaded_at', 'last_modified')
 
 
 @admin.register(Page)
