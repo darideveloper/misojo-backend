@@ -21,10 +21,12 @@ pages = Page.objects.filter(
     path_audio='',
 ).order_by('id')
 
-print(f"Pages with missing audio: {pages.count()}")
+
+file_name = __file__.split("/")[-1]
+print(f"{file_name}: Pages with missing audio: {pages.count()}")
 
 # Generate audio for a single page
 if pages:
-    print(f"Generating audio for page {pages.first()}")
+    print(f"{file_name}: Generating audio for page {pages.first()}")
     page = pages.first()
     page.generate_audio()
