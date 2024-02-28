@@ -10,7 +10,6 @@ from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.core.mail import EmailMultiAlternatives
 from libs.audio import generate_audio as gtts_generate_audio
 from libs.pdf import get_pdf_text, split_pdf as split_pdf_lib
-from libs.clean import get_clean_file_name
 from misojo.settings import MEDIA_ROOT, TEMP_FOLDER
 from django.db.models.signals import post_save
 from django.dispatch import receiver
@@ -190,17 +189,6 @@ class File(models.Model):
         self.save()
             
         print(f"pages created for file {self.name}")
-    
-    def save(self, *args, **kwargs):
-        """ Set file base name as name """
-        
-        # Remove special chars from pdf file path
-        if not self.name:
-            base_name = self.path.name.split('/')[-1]
-            self.name = get_clean_file_name(base_name)
-            print(f"file name: {self.name}")
-                                
-        super().save(*args, **kwargs)
                  
     def __str__(self):
         return self.name

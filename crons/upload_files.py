@@ -20,7 +20,6 @@ django.setup()
 
 # Django imports
 from audio_generator.models import File, User
-from libs.clean import get_clean_file_name
 
 # Env variables
 load_dotenv()
