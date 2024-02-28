@@ -235,7 +235,8 @@ class Page(models.Model):
                 self.file.user.email,
             )
             os.makedirs(file_folder, exist_ok=True)
-            pdf_path = os.path.join(file_folder, self.name)
+            pdf_name = f"{self.file.name}.pdf"
+            pdf_path = os.path.join(file_folder, pdf_name)
             with open(pdf_path, 'wb') as file:
                 file.write(response.content)
         else:
